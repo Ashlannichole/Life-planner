@@ -18,10 +18,21 @@ npm run build    # production build in dist/
 Import this GitHub repo in Vercel. It detects Vite automatically (build: `npm run build`, output: `dist`).
 Every push to the default branch then deploys, and every PR gets a preview URL. There is no backend.
 
+## Accounts and sync (optional)
+
+People can sign in with just their email (a 6-digit code, no password) to use the same planner on their phone
+and iPad. Setup steps are in [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md). Without the two `VITE_SUPABASE_*`
+variables, the app stays local-only.
+
+- `src/lib/merge.js`: three-way merge of the planner state (records by id, maps by key, plant watering added up).
+- `src/lib/sync.js`: one `planner_state` row per account with a version number, so concurrent saves merge
+  instead of overwriting.
+- `src/cloud.js`: sign-in and the background sync loop.
+
 ## How it's built
 
 - **React + Vite**, plain JavaScript, no router (tabs are in-app state), `@dnd-kit` for drag and drop.
-- **Local storage only** (`src/lib/storage.js`). Settings → "Download a backup" exports everything as JSON.
+- **Local-first** (`src/lib/storage.js`): every device keeps its own copy; optional Supabase sync on top. Settings → "Download a backup" exports everything as JSON.
 - **Mobile-first**, with safe-area insets, a home-screen manifest and dark mode. Ready for Capacitor later.
 
 | Where | What |
@@ -100,5 +111,5 @@ Titles already on the list are skipped. A weekly "Grocery shopping" chore double
 
 ## Not in v1
 
-Everything in the v2 section of the spec (accounts, sync, friends, shared garden, body doubling,
+Everything else in the v2 section of the spec (friends, shared garden, body doubling,
 challenges, notifications, calendar import). The app name and final art direction are still open.

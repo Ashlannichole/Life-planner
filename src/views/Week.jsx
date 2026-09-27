@@ -105,48 +105,50 @@ export default function Week() {
         onDragCancel={() => setDragging(null)}
         onDragEnd={onDragEnd}
       >
-        {days.map((key) => {
-          const planned = byKey.get(key)
-          const events = planned ? planned.events : eventsOnDay(state.events, key)
-          const done = key === today ? state.completions.filter((c) => c.date === key) : []
-          // `used` includes anything already done today.
-          const fill = planned ? planned.used / Math.max(planned.freeMinutes, 1) : null
-          return (
-            <DayCard key={key} dayKey={key} today={today} fill={planned && planned.freeMinutes > 0 ? fill : null} planned={planned?.planned || 0} droppable={!!planned}>
-              <div className="week-chips">
-                {events.map((e) => (
-                  <span key={e.id} className="week-chip event">
-                    {e.allDay || e.date !== key ? '' : `${formatTime(e.start)} `}
-                    {e.title}
-                  </span>
-                ))}
-                {['lunch', 'dinner'].map((slot) => {
-                  const recipe = state.recipes.find((r) => r.id === state.mealPlan[key]?.[slot])
-                  return (
-                    recipe && (
-                      <span key={slot} className="week-chip meal">
-                        🍽 {recipe.name}
-                      </span>
+        <div className="week-grid">
+          {days.map((key) => {
+            const planned = byKey.get(key)
+            const events = planned ? planned.events : eventsOnDay(state.events, key)
+            const done = key === today ? state.completions.filter((c) => c.date === key) : []
+            // `used` includes anything already done today.
+            const fill = planned ? planned.used / Math.max(planned.freeMinutes, 1) : null
+            return (
+              <DayCard key={key} dayKey={key} today={today} fill={planned && planned.freeMinutes > 0 ? fill : null} planned={planned?.planned || 0} droppable={!!planned}>
+                <div className="week-chips">
+                  {events.map((e) => (
+                    <span key={e.id} className="week-chip event">
+                      {e.allDay || e.date !== key ? '' : `${formatTime(e.start)} `}
+                      {e.title}
+                    </span>
+                  ))}
+                  {['lunch', 'dinner'].map((slot) => {
+                    const recipe = state.recipes.find((r) => r.id === state.mealPlan[key]?.[slot])
+                    return (
+                      recipe && (
+                        <span key={slot} className="week-chip meal">
+                          🍽 {recipe.name}
+                        </span>
+                      )
                     )
-                  )
-                })}
-                {done.map((c) => (
-                  <span key={c.id} className={`week-chip done ${c.type}`}>
-                    ✓ {c.title}
-                  </span>
-                ))}
-                {planned?.items.map((item) => (
-                  <Chip key={item.key} item={item} onOpen={() => setMenuItem(item)} />
-                ))}
-                {!events.length && !done.length && !planned?.items.length && (
-                  <span className="muted small">
-                    {planned?.allDayBusy ? 'Busy day — nothing extra' : planned && planned.capacity <= 0 ? 'A rest day' : 'Open'}
-                  </span>
-                )}
-              </div>
-            </DayCard>
-          )
-        })}
+                  })}
+                  {done.map((c) => (
+                    <span key={c.id} className={`week-chip done ${c.type}`}>
+                      ✓ {c.title}
+                    </span>
+                  ))}
+                  {planned?.items.map((item) => (
+                    <Chip key={item.key} item={item} onOpen={() => setMenuItem(item)} />
+                  ))}
+                  {!events.length && !done.length && !planned?.items.length && (
+                    <span className="muted small">
+                      {planned?.allDayBusy ? 'Busy day — nothing extra' : planned && planned.capacity <= 0 ? 'A rest day' : 'Open'}
+                    </span>
+                  )}
+                </div>
+              </DayCard>
+            )
+          })}
+        </div>
         <DragOverlay>
           {dragging && <span className={`week-chip drag-overlay-chip ${dragging.type}`}>{dragging.title}</span>}
         </DragOverlay>
