@@ -1,0 +1,68 @@
+{
+  "seedTasks": [
+    { "title": "Dishes", "category": "cleaning", "type": "need", "frequency": "daily", "estimatedMinutes": 10 },
+    { "title": "Wipe kitchen counters", "category": "cleaning", "type": "need", "frequency": "daily", "estimatedMinutes": 5 },
+    { "title": "Quick tidy/declutter", "category": "cleaning", "type": "need", "frequency": "daily", "estimatedMinutes": 10 },
+
+    { "title": "Vacuum", "category": "cleaning", "type": "need", "frequency": "weekly", "estimatedMinutes": 20 },
+    { "title": "Mop", "category": "cleaning", "type": "need", "frequency": "weekly", "estimatedMinutes": 20 },
+    { "title": "Dust", "category": "cleaning", "type": "need", "frequency": "weekly", "estimatedMinutes": 15 },
+    { "title": "Clean bathroom sink", "category": "cleaning", "type": "need", "frequency": "weekly", "estimatedMinutes": 5 },
+    { "title": "Scrub toilet", "category": "cleaning", "type": "need", "frequency": "weekly", "estimatedMinutes": 10 },
+    { "title": "Clean shower/tub", "category": "cleaning", "type": "need", "frequency": "weekly", "estimatedMinutes": 15 },
+    { "title": "Take out trash/recycling", "category": "cleaning", "type": "need", "frequency": "weekly", "estimatedMinutes": 5 },
+    { "title": "Change bed sheets", "category": "cleaning", "type": "need", "frequency": "weekly", "estimatedMinutes": 10 },
+    { "title": "Wipe down mirrors", "category": "cleaning", "type": "need", "frequency": "weekly", "estimatedMinutes": 5 },
+
+    { "title": "Clean fridge (wipe shelves, toss expired)", "category": "cleaning", "type": "need", "frequency": "biweekly", "estimatedMinutes": 20 },
+    { "title": "Wipe baseboards", "category": "cleaning", "type": "need", "frequency": "biweekly", "estimatedMinutes": 15 },
+    { "title": "Clean inside microwave", "category": "cleaning", "type": "need", "frequency": "biweekly", "estimatedMinutes": 10 },
+
+    { "title": "Clean ceiling fans", "category": "cleaning", "type": "need", "frequency": "monthly", "estimatedMinutes": 15 },
+    { "title": "Wipe light switches/doorknobs", "category": "cleaning", "type": "need", "frequency": "monthly", "estimatedMinutes": 10 },
+    { "title": "Clean windows/window sills", "category": "cleaning", "type": "need", "frequency": "monthly", "estimatedMinutes": 20 },
+    { "title": "Vacuum under furniture", "category": "cleaning", "type": "need", "frequency": "monthly", "estimatedMinutes": 15 },
+    { "title": "Clean out car", "category": "cleaning", "type": "need", "frequency": "monthly", "estimatedMinutes": 30 },
+    { "title": "Wash bath mats/shower curtain", "category": "cleaning", "type": "need", "frequency": "monthly", "estimatedMinutes": 15 },
+    { "title": "Descale coffee maker", "category": "cleaning", "type": "need", "frequency": "monthly", "estimatedMinutes": 15 },
+    { "title": "Clean washing machine (empty cycle with cleaner)", "category": "cleaning", "type": "need", "frequency": "monthly", "estimatedMinutes": 10 },
+    { "title": "Clean dishwasher (empty cycle with cleaner)", "category": "cleaning", "type": "need", "frequency": "monthly", "estimatedMinutes": 10 },
+
+    { "title": "Deep clean fridge/freezer", "category": "cleaning", "type": "need", "frequency": "seasonal", "estimatedMinutes": 45 },
+    { "title": "Wash curtains", "category": "cleaning", "type": "need", "frequency": "seasonal", "estimatedMinutes": 30 },
+    { "title": "Clean vents/replace air filter", "category": "cleaning", "type": "need", "frequency": "seasonal", "estimatedMinutes": 20 },
+    { "title": "Declutter closet", "category": "cleaning", "type": "need", "frequency": "seasonal", "estimatedMinutes": 60 },
+    { "title": "Clean gutters", "category": "cleaning", "type": "need", "frequency": "seasonal", "estimatedMinutes": 60 },
+
+    { "title": "Wash clothes", "category": "laundry", "type": "need", "frequency": "weekly", "estimatedMinutes": 15 },
+    { "title": "Fold/put away laundry", "category": "laundry", "type": "need", "frequency": "weekly", "estimatedMinutes": 15 },
+    { "title": "Wash towels", "category": "laundry", "type": "need", "frequency": "weekly", "estimatedMinutes": 10 },
+    { "title": "Wash sheets", "category": "laundry", "type": "need", "frequency": "weekly", "estimatedMinutes": 10 },
+
+    { "title": "Meal prep", "category": "kitchen", "type": "need", "frequency": "weekly", "estimatedMinutes": 60 },
+    { "title": "Grocery shopping", "category": "kitchen", "type": "need", "frequency": "weekly", "estimatedMinutes": 45 },
+    { "title": "Take out compost/trash", "category": "kitchen", "type": "need", "frequency": "weekly", "estimatedMinutes": 5 },
+
+    { "title": "Pay bills", "category": "admin", "type": "need", "frequency": "monthly", "estimatedMinutes": 20 },
+    { "title": "Check mail", "category": "admin", "type": "need", "frequency": "weekly", "estimatedMinutes": 5 },
+    { "title": "Update budget", "category": "admin", "type": "need", "frequency": "monthly", "estimatedMinutes": 20 },
+    { "title": "File paperwork", "category": "admin", "type": "need", "frequency": "monthly", "estimatedMinutes": 15 },
+    { "title": "Car maintenance check", "category": "admin", "type": "need", "frequency": "monthly", "estimatedMinutes": 15 },
+    { "title": "Water plants", "category": "admin", "type": "need", "frequency": "weekly", "estimatedMinutes": 5 },
+
+    { "title": "Feed pet", "category": "pets", "type": "need", "frequency": "daily", "estimatedMinutes": 5 },
+    { "title": "Walk pet", "category": "pets", "type": "need", "frequency": "daily", "estimatedMinutes": 20 },
+    { "title": "Clean litter box/cage", "category": "pets", "type": "need", "frequency": "weekly", "estimatedMinutes": 10 },
+    { "title": "Refill pet water", "category": "pets", "type": "need", "frequency": "daily", "estimatedMinutes": 2 },
+
+    { "title": "Skincare routine", "category": "personal", "type": "want", "frequency": "daily", "estimatedMinutes": 10 },
+    { "title": "Haircut/grooming", "category": "personal", "type": "need", "frequency": "monthly", "estimatedMinutes": 30 }
+  ],
+  "frequencyToDays": {
+    "daily": 1,
+    "weekly": 7,
+    "biweekly": 14,
+    "monthly": 30,
+    "seasonal": 90
+  }
+}
