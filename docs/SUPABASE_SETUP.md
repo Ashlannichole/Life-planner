@@ -54,3 +54,10 @@ For local development, copy `.env.example` to `.env.local` and fill in the same 
 - On first sign-in, whatever is already on that device is added to the account. A device that was never set up
   simply receives the account's plan.
 - Signing out keeps the plan on that device; it just stops syncing.
+
+## How much room it takes
+
+Each account is one small row. Check-offs older than 90 days are folded into compact daily summaries, so a
+heavy user stays around 50–100 KB even after years. Syncing checks a version number first and only downloads the
+whole plan when another device changed it, which keeps data transfer low. On the free plan that's room for
+thousands of accounts; move to Pro before real users rely on it, since free projects pause after a week idle.

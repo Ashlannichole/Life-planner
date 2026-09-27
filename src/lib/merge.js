@@ -123,6 +123,10 @@ export function mergeState(base, local, remote) {
     checks: mergeMap(base.groceries?.checks, local.groceries?.checks, remote.groceries?.checks),
     extras: mergeById(base.groceries?.extras, local.groceries?.extras, remote.groceries?.extras),
   }
+  out.history = {
+    days: mergeMap(base.history?.days, local.history?.days, remote.history?.days),
+    tasks: mergeMap(base.history?.tasks, local.history?.tasks, remote.history?.tasks),
+  }
   out.plant = mergePlant(base.plant, local.plant, remote.plant)
   out.unlockedThemes = union(local.unlockedThemes, remote.unlockedThemes)
   out.onboarded = !!(local.onboarded || remote.onboarded)

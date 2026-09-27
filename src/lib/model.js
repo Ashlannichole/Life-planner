@@ -135,6 +135,7 @@ export function initialState() {
     onboarded: false,
     tasks: [],
     completions: [],
+    history: { days: {}, tasks: {} },
     events: [],
     templates: [normal],
     activeTemplateId: normal.id,
