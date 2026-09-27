@@ -692,6 +692,30 @@ textarea.input {
   min-height: 44px;
 }
 
+/* ---------- starter library */
+
+.lib-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  border-radius: 14px;
+  padding: 7px 12px;
+}
+.lib-chip .lib-meta {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.lib-chip:disabled {
+  opacity: 0.55;
+}
+.onboarding-next {
+  position: sticky;
+  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  box-shadow: var(--shadow);
+}
+
 /* ---------- themes */
 
 .theme-swatch {

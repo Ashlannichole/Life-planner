@@ -68,7 +68,7 @@ export default function TaskEditor({ task, initialTitle = '', onClose, onSaved }
         <div className="field">
           <span className="label">About how long?</span>
           <Chips
-            options={DURATIONS.map((m) => ({ id: m, label: durationLabel(m) }))}
+            options={[...new Set([...DURATIONS, draft.minutes])].sort((a, b) => a - b).map((m) => ({ id: m, label: durationLabel(m) }))}
             value={draft.minutes}
             onChange={(minutes) => set({ minutes })}
             className={draft.type === 'want' ? 'want' : ''}

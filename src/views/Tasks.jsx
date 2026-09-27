@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import CompostSheet from '../components/CompostSheet.jsx'
+import LibraryPicker from '../components/LibraryPicker.jsx'
 import TaskEditor from '../components/TaskEditor.jsx'
-import { Icon, useToast } from '../components/ui.jsx'
+import { Icon, Sheet, useToast } from '../components/ui.jsx'
+import { LIBRARY, hasTask } from '../lib/library.js'
 import { formatDay } from '../lib/dates.js'
 import { REPEATS, categoryById, durationLabel } from '../lib/model.js'
 import { useStore } from '../store.jsx'
@@ -48,6 +50,7 @@ export default function Tasks() {
   const [showDone, setShowDone] = useState(false)
 
   const [composting, setComposting] = useState(null)
+  const [library, setLibrary] = useState(null) // Set of picked indexes while the library is open
   const pile = state.tasks.filter((t) => t.compost && !t.doneAt)
   const active = state.tasks.filter((t) => (t.repeat !== 'none' || !t.doneAt) && !t.compost)
   const done = state.tasks.filter((t) => t.repeat === 'none' && t.doneAt).sort((a, b) => b.doneAt.localeCompare(a.doneAt))
@@ -125,6 +128,9 @@ export default function Tasks() {
       >
         <Icon name="plus" width="16" height="16" /> Add with details
       </button>
+      <button className="btn" onClick={() => setLibrary(new Set())}>
+        📚 Browse common chores
+      </button>
 
       {active.length === 0 && (
         <div className="empty">
@@ -180,6 +186,28 @@ export default function Tasks() {
         </div>
       )}
 
+      {library && (
+        <Sheet title="Common chores" onClose={() => setLibrary(null)}>
+          <div className="stack">
+            <p className="small muted" style={{ margin: 0 }}>
+              Tap what applies to you. How often and how long are already filled in; I’ll spread them out.
+            </p>
+            <LibraryPicker selected={library} onChange={setLibrary} isAdded={(title) => hasTask(state.tasks, title)} />
+            <button
+              className="btn primary big"
+              style={{ position: 'sticky', bottom: 0 }}
+              disabled={!library.size}
+              onClick={() => {
+                const n = actions.addLibraryTasks(LIBRARY.filter((e) => library.has(e.index)))
+                toast(`Added ${n} ${n === 1 ? 'chore' : 'chores'}. I’ll spread them out.`)
+                setLibrary(null)
+              }}
+            >
+              {library.size ? `Add ${library.size} ${library.size === 1 ? 'chore' : 'chores'}` : 'Pick some chores'}
+            </button>
+          </div>
+        </Sheet>
+      )}
       {composting && <CompostSheet task={composting} onClose={() => setComposting(null)} />}
       {editing && (
         <TaskEditor

@@ -34,6 +34,8 @@ export const CATEGORIES = [
   { id: 'cleaning', label: 'Cleaning', icon: '🧽' },
   { id: 'cooking', label: 'Cooking', icon: '🍳' },
   { id: 'laundry', label: 'Laundry', icon: '🧺' },
+  { id: 'kitchen', label: 'Kitchen', icon: '🍽' },
+  { id: 'pets', label: 'Pets', icon: '🐾' },
   { id: 'admin', label: 'Admin', icon: '📋' },
   { id: 'errands', label: 'Errands', icon: '🛒' },
   { id: 'selfcare', label: 'Self-care', icon: '🛁' },

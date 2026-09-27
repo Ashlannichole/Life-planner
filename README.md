@@ -78,6 +78,14 @@ need-to and want-to.
 - **Apple Health sync** (Oura ring calories burned, VeSync scale calories eaten) needs the native iPhone app
   (Capacitor) and is planned for that phase.
 
+## Starter chore library
+
+`src/data/seed-tasks.json` holds 49 common chores (category, need/want, frequency, minutes). They appear as tap-to-pick
+chips in onboarding and under Tasks → "Browse common chores" (`src/lib/library.js`). Frequencies map to repeats
+(biweekly = every 14 days, seasonal = every 90), "personal" maps to Self-care, and chores that repeat every two
+weeks or less often get their first date spread over the coming weeks so they don't all land on day one.
+Titles already on the list are skipped. A weekly "Grocery shopping" chore doubles as the grocery list's shopping trip.
+
 ## Trust and gentle motivation
 
 - **Why this day**: every scheduled task carries one plain line explaining its placement ("Prep for Portland trip,

@@ -153,3 +153,15 @@ describe('nutrition (optional)', () => {
     expect(plannedCalories(state, addDays(MON, 1))).toBeNull()
   })
 })
+
+describe('shopping task', () => {
+  it('uses a repeating grocery shopping chore when there is one', async () => {
+    const { findShoppingTask } = await import('./meals.js')
+    const weekly = makeTask({ title: 'Grocery shopping', repeat: 'weekly' })
+    const other = makeTask({ title: 'Vacuum', repeat: 'weekly' })
+    expect(findShoppingTask([other, weekly])).toBe(weekly)
+    const trip = makeTask({ title: 'Grocery shopping', groceryTrip: true })
+    expect(findShoppingTask([weekly, trip])).toBe(trip)
+    expect(findShoppingTask([other])).toBeUndefined()
+  })
+})

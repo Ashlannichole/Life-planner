@@ -10,6 +10,14 @@ export const MEAL_SLOTS = [
 
 export const PLAN_DAYS = 7
 
+/** The shopping task the grocery list works with: a one-off trip, or a repeating "Grocery shopping" chore. */
+export function findShoppingTask(tasks) {
+  return (
+    tasks.find((t) => t.groceryTrip && !t.doneAt) ||
+    tasks.find((t) => t.repeat && t.repeat !== 'none' && !t.compost && /grocery shopping/i.test(t.title))
+  )
+}
+
 const UNITS =
   'cups?|c|tbsp|tablespoons?|tsp|teaspoons?|g|grams?|kg|lbs?|pounds?|oz|ounces?|ml|l|liters?|litres?|cans?|jars?|packs?|packages?|bags?|boxes?|bunch(?:es)?|cloves?|heads?|slices?|pinch(?:es)?|handfuls?|sticks?|dozen'
 const QTY = '(?:\\d+(?:[.,/]\\d+)?|[½¼¾⅓⅔])(?:\\s*(?:\\d+\\/\\d+|[½¼¾⅓⅔]))?(?:\\s*-\\s*\\d+)?'

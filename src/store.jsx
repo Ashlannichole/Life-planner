@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { addDays, todayKey } from './lib/dates.js'
 import { initialState, makeTask, makeTemplate, uid } from './lib/model.js'
 import { addPush, planSnapshot, rollPushes, sameSnapshot } from './lib/compost.js'
-import { groceryList, suggestMeals } from './lib/meals.js'
+import { hasTask, tasksFromLibrary } from './lib/library.js'
+import { findShoppingTask, groceryList, suggestMeals } from './lib/meals.js'
 import { applyMilestones } from './lib/milestones.js'
 import { unwater, water } from './lib/plant.js'
 import { makePrepTasks, reschedulePrepTasks } from './lib/prep.js'
@@ -91,6 +92,15 @@ export function StoreProvider({ children }) {
       },
       deleteTask(id) {
         update((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }))
+      },
+
+      /** Add picked starter-library entries, skipping any already on the list. */
+      addLibraryTasks(entries) {
+        const s = stateRef.current
+        const fresh = entries.filter((e) => !hasTask(s.tasks, e.title))
+        const tasks = tasksFromLibrary(fresh, today)
+        commit({ ...s, tasks: [...s.tasks, ...tasks] })
+        return tasks.length
       },
 
       // ---- doing things
@@ -364,7 +374,13 @@ export function StoreProvider({ children }) {
         if (!needed.length) return null
         const firstDay = needed.map((i) => i.firstDay).filter(Boolean).sort()[0]
         const deadline = firstDay && firstDay > today ? addDays(firstDay, -1) : today
-        const existing = s.tasks.find((t) => t.groceryTrip && !t.doneAt)
+        const existing = findShoppingTask(s.tasks)
+        if (existing && existing.repeat !== 'none') {
+          // A weekly shopping chore already exists: make sure its next trip lands in time.
+          const next = scheduleRef.current.days.flatMap((d) => d.items).find((i) => i.taskId === existing.id)
+          if (next && next.day > deadline) commit({ ...s, pins: { ...s.pins, [next.key]: deadline } })
+          return existing.id
+        }
         if (existing) {
           commit({ ...s, tasks: s.tasks.map((t) => (t === existing ? { ...t, deadline } : t)) })
           return existing.id

@@ -1,5 +1,8 @@
 import { useState } from 'react'
+import LibraryPicker from '../components/LibraryPicker.jsx'
 import Plant from '../components/Plant.jsx'
+import { todayKey } from '../lib/dates.js'
+import { LIBRARY, tasksFromLibrary } from '../lib/library.js'
 import { APP_NAME, makeTask, makeTemplate } from '../lib/model.js'
 import { PLANT_TYPES } from '../lib/plant.js'
 import { useStore } from '../store.jsx'
@@ -12,12 +15,8 @@ const FREE_TIME = [
   { id: 'weekend', label: 'Weekends', hint: '10am–5pm', blocks: [{ days: [0, 6], start: '10:00', end: '17:00' }] },
 ]
 
+// Fun ideas. Chores come from the starter library below them.
 const SUGGESTIONS = [
-  { title: 'Laundry', type: 'need', minutes: 60, repeat: 'weekly', category: 'laundry' },
-  { title: 'Wash the dishes', type: 'need', minutes: 15, repeat: 'daily', category: 'cleaning' },
-  { title: 'Meal prep', type: 'need', minutes: 90, repeat: 'weekly', category: 'cooking', preferredTime: 'weekend' },
-  { title: 'Vacuum', type: 'need', minutes: 30, repeat: 'weekly', category: 'cleaning' },
-  { title: 'Pay bills', type: 'need', minutes: 15, repeat: 'monthly', category: 'admin' },
   { title: 'Read a chapter', type: 'want', minutes: 30, repeat: 'none', category: 'hobby' },
   { title: 'Crochet', type: 'want', minutes: 60, repeat: 'none', category: 'hobby' },
   { title: 'Bake something', type: 'want', minutes: 90, repeat: 'none', category: 'hobby', preferredTime: 'weekend' },
@@ -30,6 +29,7 @@ export default function Onboarding() {
   const [free, setFree] = useState(() => new Set(['wkevening', 'weekend']))
   const [tasks, setTasks] = useState([])
   const [typed, setTyped] = useState('')
+  const [chores, setChores] = useState(() => new Set())
   const [plantId, setPlantId] = useState(state.plant.current.typeId)
 
   const finish = () => {
@@ -41,7 +41,8 @@ export default function Onboarding() {
       updates.templates = [template, ...state.templates.filter((t) => t.name !== 'Normal')]
       updates.activeTemplateId = template.id
     }
-    updates.tasks = [...state.tasks, ...tasks.map((t) => makeTask(t))]
+    const picked = LIBRARY.filter((e) => chores.has(e.index))
+    updates.tasks = [...state.tasks, ...tasks.map((t) => makeTask(t)), ...tasksFromLibrary(picked, todayKey())]
     updates.plant = { ...state.plant, current: { ...state.plant.current, typeId: plantId } }
     actions.finishOnboarding(updates)
   }
@@ -97,7 +98,10 @@ export default function Onboarding() {
       <div className="grow stack">
         <h1>What’s on your mind?</h1>
         <p className="muted" style={{ margin: 0 }}>
-          Tap a few, or type your own. Mix in fun things — they’ll get real time in your week.
+          Tap what applies. I’ll figure out how often and when. Mix in fun things too; they get real time in your week.
+        </p>
+        <p className="section-title" style={{ margin: '8px 0 0' }}>
+          🧶 Fun things
         </p>
         <div className="chips">
           {SUGGESTIONS.map((s) => (
@@ -128,9 +132,12 @@ export default function Onboarding() {
             Add
           </button>
         </form>
+        <div style={{ marginTop: 12 }}>
+          <LibraryPicker selected={chores} onChange={setChores} />
+        </div>
       </div>
-      <button className="btn primary big" onClick={() => setStep(3)}>
-        {tasks.length ? `Next (${tasks.length} added)` : 'Next'}
+      <button className="btn primary big onboarding-next" onClick={() => setStep(3)}>
+        {tasks.length + chores.size ? `Next (${tasks.length + chores.size} added)` : 'Next'}
       </button>
     </>,
     <>

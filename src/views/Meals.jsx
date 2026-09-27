@@ -2,7 +2,7 @@ import { useState } from 'react'
 import RecipeEditor from '../components/RecipeEditor.jsx'
 import { Icon, Segmented, Sheet, useToast } from '../components/ui.jsx'
 import { formatDay } from '../lib/dates.js'
-import { MEAL_SLOTS, combineAmounts, groceryList, nutritionOn, planDays, plannedCalories } from '../lib/meals.js'
+import { MEAL_SLOTS, combineAmounts, findShoppingTask, groceryList, nutritionOn, planDays, plannedCalories } from '../lib/meals.js'
 import { durationLabel } from '../lib/model.js'
 import { useStore } from '../store.jsx'
 
@@ -206,7 +206,7 @@ function Groceries() {
   const list = groceryList(state, today)
   const toGet = list.filter((i) => !i.status)
   const done = list.filter((i) => i.status)
-  const trip = state.tasks.find((t) => t.groceryTrip && !t.doneAt)
+  const trip = findShoppingTask(state.tasks)
   const tripDay = trip && schedule.nextDayForTask[trip.id]
 
   return (
