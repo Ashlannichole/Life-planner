@@ -176,3 +176,14 @@ describe('event prep', () => {
     expect(moved[0].deadline).toBe('2026-11-26')
   })
 })
+
+describe('low-energy days', () => {
+  it('plans a lighter day', () => {
+    const tasks = Array.from({ length: 10 }, (_, i) => task(`T${i}`, { minutes: 15, createdAt: i }))
+    const normal = buildSchedule(stateWith({ tasks }), { today: MON }).days[0]
+    const low = buildSchedule(stateWith({ tasks, energy: { [MON]: 'low' } }), { today: MON }).days[0]
+    expect(low.lowEnergy).toBe(true)
+    expect(low.capacity).toBe(Math.floor(normal.capacity * 0.6))
+    expect(low.planned).toBeLessThan(normal.planned)
+  })
+})

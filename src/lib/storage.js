@@ -39,5 +39,6 @@ export function housekeep(state, today) {
   const pins = Object.fromEntries(Object.entries(state.pins || {}).filter(([, d]) => d >= today))
   const deferrals = Object.fromEntries(Object.entries(state.deferrals || {}).filter(([, d]) => d > today))
   const dayOrder = Object.fromEntries(Object.entries(state.dayOrder || {}).filter(([d]) => d >= today))
-  return { ...state, pins, deferrals, dayOrder }
+  const energy = Object.fromEntries(Object.entries(state.energy || {}).filter(([d]) => d >= today))
+  return { ...state, pins, deferrals, dayOrder, energy }
 }

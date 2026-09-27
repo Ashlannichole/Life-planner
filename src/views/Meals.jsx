@@ -2,7 +2,7 @@ import { useState } from 'react'
 import RecipeEditor from '../components/RecipeEditor.jsx'
 import { Icon, Segmented, Sheet, useToast } from '../components/ui.jsx'
 import { formatDay } from '../lib/dates.js'
-import { MEAL_SLOTS, combineAmounts, groceryList, planDays } from '../lib/meals.js'
+import { MEAL_SLOTS, combineAmounts, groceryList, nutritionOn, planDays, plannedCalories } from '../lib/meals.js'
 import { durationLabel } from '../lib/model.js'
 import { useStore } from '../store.jsx'
 
@@ -82,6 +82,9 @@ function Plan({ onNewRecipe }) {
         <section key={day} className={`week-day ${day === today ? 'today' : ''}`}>
           <header>
             <h3>{formatDay(day, today)}</h3>
+            {nutritionOn(state) && plannedCalories(state, day) != null && (
+              <span className="small muted">~{plannedCalories(state, day).toLocaleString()} cal planned</span>
+            )}
           </header>
           <div className="stack" style={{ gap: 6 }}>
             {MEAL_SLOTS.map((slot) => {
@@ -139,6 +142,7 @@ function Recipes({ onEdit }) {
               <span className="meta">
                 <span>{r.meal === 'any' ? 'Lunch or dinner' : r.meal === 'lunch' ? 'Lunch' : 'Dinner'}</span>
                 {r.minutes > 0 && <span>· {durationLabel(r.minutes)}</span>}
+                {nutritionOn(state) && r.calories > 0 && <span>· {r.calories} cal</span>}
                 <span>
                   · {r.ingredients.length} {r.ingredients.length === 1 ? 'ingredient' : 'ingredients'}
                 </span>

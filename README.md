@@ -67,6 +67,17 @@ need-to and want-to.
 - **Planner integration**: a recipe's cooking time counts against that day's free time. "Add a shopping trip"
   creates one Grocery shopping task, due before the first meal that needs something.
 
+## Optional nutrition and energy
+
+- **Nutrition is off by default** (Settings → Nutrition). When on, recipes get an optional calories field and
+  each planned day shows its total in plain text. Nothing is ever marked over or under.
+- **Daily calorie target (optional)**: "Suggest meals" picks recipes that bring each day near its share of the
+  target (lunch ~35%, dinner ~40%), while still avoiding dishes eaten in the last few days.
+- **Low-energy day**: one tap on Today keeps 60% of the day's usual plan. Later, a wearable's readiness score
+  (e.g. Oura via Apple Health) can set this automatically.
+- **Apple Health sync** (Oura ring calories burned, VeSync scale calories eaten) needs the native iPhone app
+  (Capacitor) and is planned for that phase.
+
 ## Not in v1
 
 Everything in the v2 section of the spec (accounts, sync, friends, shared garden, body doubling,

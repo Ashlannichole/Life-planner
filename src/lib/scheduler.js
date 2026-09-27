@@ -12,6 +12,9 @@ import { PARTS } from './model.js'
 
 export const HORIZON_DAYS = 14
 
+// A low-energy day keeps this share of its usual plan.
+export const LOW_ENERGY_FACTOR = 0.6
+
 // ---------------------------------------------------------------------------
 // Recurrence
 
@@ -289,6 +292,14 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
   }))
   const byKey = new Map(days.map((d) => [d.key, d]))
 
+  // Low-energy days get a lighter plan. Set by the user today; later this can
+  // come from a wearable's readiness score.
+  for (const day of days) {
+    if (state.energy?.[day.key] !== 'low') continue
+    day.capacity = Math.floor(day.capacity * LOW_ENERGY_FACTOR)
+    for (const p of Object.keys(day.parts)) day.parts[p] = Math.floor(day.parts[p] * LOW_ENERGY_FACTOR)
+  }
+
   // Planned meals take cooking time, so those days get less other work.
   const cooking = cookingMinutesByDay(state)
   for (const day of days) {
@@ -395,6 +406,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
       freeMinutes: d.freeMinutes,
       used: d.used,
       cookingMinutes: cooking[d.key] || 0,
+      lowEnergy: state.energy?.[d.key] === 'low',
       planned: items.reduce((t, i) => t + i.minutes, 0),
       allDayBusy: d.allDayBusy,
       eventMinutes: d.eventMinutes,

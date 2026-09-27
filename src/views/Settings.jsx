@@ -109,6 +109,37 @@ export default function Settings({ onBack }) {
       )}
 
       <div className="section">
+        <p className="section-title">Nutrition (optional)</p>
+        <div className="card stack">
+          <div className="row spread">
+            <span>Show calories on recipes and meals</span>
+            <Toggle on={!!state.settings.nutrition} onChange={(nutrition) => actions.updateSettings({ nutrition })} label="Nutrition" />
+          </div>
+          {state.settings.nutrition && (
+            <>
+              <div className="field">
+                <label htmlFor="target">Daily calorie target (optional)</label>
+                <input
+                  id="target"
+                  className="input"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  placeholder="Leave empty for none"
+                  value={state.settings.calorieTarget ?? ''}
+                  onChange={(e) => actions.updateSettings({ calorieTarget: e.target.value ? Math.max(0, Number(e.target.value)) : null })}
+                />
+              </div>
+              <p className="small muted" style={{ margin: 0 }}>
+                With a target, “Suggest meals” picks recipes that fit it for you. Totals are just information; nothing is ever marked
+                over or under. Syncing from Apple Health (Oura ring, VeSync scale) will come with the iPhone app.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="section">
         <p className="section-title">Preferences</p>
         <div className="card stack">
           <div className="row spread">

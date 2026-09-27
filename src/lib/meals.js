@@ -1,7 +1,7 @@
 // Meal planning: reusable recipes, a lunch/dinner plan, and a grocery list
 // derived from the plan.
 
-import { addDays, rangeKeys } from './dates.js'
+import { addDays, diffDays, rangeKeys } from './dates.js'
 
 export const MEAL_SLOTS = [
   { id: 'lunch', label: 'Lunch' },
@@ -166,10 +166,34 @@ export function groceryList(state, today) {
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
+// Rough share of a day's calories each planned meal aims for; breakfast and
+// snacks make up the rest.
+const MEAL_SHARE = { lunch: 0.35, dinner: 0.4 }
+
+export function nutritionOn(state) {
+  return !!state.settings?.nutrition
+}
+
+/** Planned calories per day, counting only recipes that have calories set. */
+export function plannedCalories(state, day) {
+  let total = 0
+  let known = false
+  for (const id of Object.values(state.mealPlan?.[day] || {})) {
+    const cal = state.recipes.find((r) => r.id === id)?.calories
+    if (cal) {
+      total += cal
+      known = true
+    }
+  }
+  return known ? total : null
+}
+
 /**
  * Fill empty slots in the coming week. Dinners always; lunches only if the
  * user has lunch recipes (plenty of people don't plan lunch). Rotates through
  * recipes, least recently planned first, and avoids repeats within the week.
+ * With nutrition on and a daily target set, it also prefers recipes that
+ * bring the day's planned meals close to their share of the target.
  */
 export function suggestMeals(state, today) {
   const days = planDays(today)
@@ -189,9 +213,23 @@ export function suggestMeals(state, today) {
       if (!fits.length) continue
       const fresh = fits.filter((r) => !usedThisWeek.has(r.id))
       const pool = fresh.length ? fresh : fits
-      const pick = [...pool].sort(
+      const byRotation = [...pool].sort(
         (a, b) => (lastUsed[a.id] || '').localeCompare(lastUsed[b.id] || '') || a.createdAt - b.createdAt,
-      )[0]
+      )
+      let pick = byRotation[0]
+      const target = nutritionOn(state) && Number(state.settings.calorieTarget)
+      if (target) {
+        const other = slot === 'lunch' ? 'dinner' : 'lunch'
+        const otherCal = state.recipes.find((r) => r.id === plan[day]?.[other])?.calories
+        const ideal = otherCal
+          ? target * (MEAL_SHARE.lunch + MEAL_SHARE.dinner) - otherCal
+          : target * MEAL_SHARE[slot]
+        // Variety still matters: a recipe eaten in the last few days costs as much as
+        // being a few hundred calories off target, so the week doesn't repeat one dish.
+        const recency = (r) => (lastUsed[r.id] ? Math.max(0, 4 - diffDays(lastUsed[r.id], day)) * 1.5 : 0)
+        const cost = (r, i) => recency(r) + (r.calories ? Math.abs(r.calories - ideal) / 150 : 2) + i * 0.01
+        pick = byRotation.map((r, i) => ({ r, c: cost(r, i) })).sort((a, b) => a.c - b.c)[0].r
+      }
       plan[day] = { ...(plan[day] || {}), [slot]: pick.id }
       usedThisWeek.add(pick.id)
       lastUsed[pick.id] = day

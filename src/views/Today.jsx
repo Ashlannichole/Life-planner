@@ -162,6 +162,7 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
           </button>
           <p className="muted small" style={{ margin: '4px 0 0' }}>
             {items.length} {items.length === 1 ? 'thing' : 'things'} for today, in a suggested order.
+            {day.lowEnergy && ' 🌙 Lighter day.'}
           </p>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={items.map((i) => i.key)} strategy={verticalListSortingStrategy}>
@@ -196,11 +197,28 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
         </div>
       )}
 
-      {items.length > 0 && (
-        <button className="btn ghost" onClick={pullIn}>
-          Got extra time? Pull in one more
-        </button>
-      )}
+      <div className="row wrap" style={{ justifyContent: 'center', gap: 4 }}>
+        {items.length > 0 && (
+          <button className="btn ghost" onClick={pullIn}>
+            Extra time? Pull one in
+          </button>
+        )}
+        {day.lowEnergy ? (
+          <button className="btn ghost" onClick={() => actions.setEnergy(today, null)}>
+            🌙 Lighter day · undo
+          </button>
+        ) : (
+          <button
+            className="btn ghost"
+            onClick={() => {
+              actions.setEnergy(today, 'low')
+              toast('Taking it easy — today is lighter now')
+            }}
+          >
+            Low energy? Lighten today
+          </button>
+        )}
+      </div>
 
       {doneToday.length > 0 && (
         <div className="section">

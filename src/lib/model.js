@@ -156,6 +156,9 @@ export function initialState() {
       sound: true,
       buffer: 0.2,
       recapSeen: null,
+      nutrition: false,
+      calorieTarget: null,
     },
+    energy: {},
   }
 }

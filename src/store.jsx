@@ -227,6 +227,16 @@ export function StoreProvider({ children }) {
         update((s) => ({ ...s, packingLists: s.packingLists.filter((p) => p.id !== id) }))
       },
 
+      // ---- energy
+      setEnergy(day, level) {
+        update((s) => {
+          const energy = { ...s.energy }
+          if (level) energy[day] = level
+          else delete energy[day]
+          return { ...s, energy }
+        })
+      },
+
       // ---- meals
       saveRecipe(recipe) {
         update((s) => {

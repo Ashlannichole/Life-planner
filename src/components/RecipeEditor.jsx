@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ingredientsToText, parseIngredients } from '../lib/meals.js'
+import { ingredientsToText, nutritionOn, parseIngredients } from '../lib/meals.js'
 import { DURATIONS, durationLabel, uid } from '../lib/model.js'
 import { useStore } from '../store.jsx'
 import { Chips, Sheet } from './ui.jsx'
@@ -11,12 +11,14 @@ const MEALS = [
 ]
 
 export default function RecipeEditor({ recipe, onClose, onSaved }) {
-  const { actions } = useStore()
+  const { state, actions } = useStore()
   const [name, setName] = useState(recipe?.name || '')
   const [meal, setMeal] = useState(recipe?.meal || 'dinner')
   const [minutes, setMinutes] = useState(recipe?.minutes ?? 30)
   const [ingredients, setIngredients] = useState(recipe ? ingredientsToText(recipe.ingredients) : '')
   const [notes, setNotes] = useState(recipe?.notes || '')
+  const [calories, setCalories] = useState(recipe?.calories ?? '')
+  const showNutrition = nutritionOn(state)
   const [confirm, setConfirm] = useState(false)
 
   const save = (e) => {
@@ -30,6 +32,7 @@ export default function RecipeEditor({ recipe, onClose, onSaved }) {
       minutes,
       ingredients: parseIngredients(ingredients),
       notes: notes.trim(),
+      calories: calories === '' ? null : Math.max(0, Math.round(Number(calories)) || 0) || null,
     }
     actions.saveRecipe(saved)
     if (!recipe) onSaved?.(saved)
@@ -63,6 +66,21 @@ export default function RecipeEditor({ recipe, onClose, onSaved }) {
             onChange={(e) => setIngredients(e.target.value)}
           />
         </div>
+        {showNutrition && (
+          <div className="field">
+            <label htmlFor="calories">Calories per serving (optional)</label>
+            <input
+              id="calories"
+              className="input"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              placeholder="e.g. 650"
+              value={calories}
+              onChange={(e) => setCalories(e.target.value)}
+            />
+          </div>
+        )}
         <div className="field">
           <label htmlFor="notes">Notes or link (optional)</label>
           <textarea id="notes" className="input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />

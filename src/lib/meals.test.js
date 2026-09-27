@@ -119,3 +119,37 @@ describe('combineAmounts', () => {
     expect(combineAmounts(['a handful', '2'])).toBe('2 + a handful')
   })
 })
+
+describe('nutrition (optional)', () => {
+  const recipes = [
+    recipe('a', 'Big pasta', [], { calories: 1100 }),
+    recipe('b', 'Chicken bowl', [], { calories: 700 }),
+    recipe('c', 'Soup', [], { calories: 350 }),
+  ]
+
+  it('ignores calories while nutrition is off', () => {
+    const plan = suggestMeals({ ...initialState(), recipes, mealPlan: {} }, MON)
+    expect(plan[MON].dinner).toBe('a') // plain rotation: oldest first
+  })
+
+  it('aims dinners at their share of the daily target when it is on', () => {
+    const s = initialState()
+    const state = { ...s, recipes, mealPlan: {}, settings: { ...s.settings, nutrition: true, calorieTarget: 1800 } }
+    const plan = suggestMeals(state, MON)
+    // 40% of 1800 = 720, so the 700 bowl wins over rotation order.
+    expect(plan[MON].dinner).toBe('b')
+    // Still no repeats within the week while fresh recipes remain.
+    expect(new Set([0, 1, 2].map((i) => plan[addDays(MON, i)].dinner)).size).toBe(3)
+    // Once every recipe has been used, the best fit still doesn't take over the week.
+    const week = [0, 1, 2, 3, 4, 5, 6].map((i) => plan[addDays(MON, i)].dinner)
+    expect(week.filter((id) => id === 'b').length).toBeLessThanOrEqual(3)
+    for (let i = 1; i < 7; i++) expect(week[i]).not.toBe(week[i - 1])
+  })
+
+  it('totals planned calories per day', async () => {
+    const { plannedCalories } = await import('./meals.js')
+    const state = { ...initialState(), recipes, mealPlan: { [MON]: { lunch: 'c', dinner: 'b' } } }
+    expect(plannedCalories(state, MON)).toBe(1050)
+    expect(plannedCalories(state, addDays(MON, 1))).toBeNull()
+  })
+})
