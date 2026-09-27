@@ -18,6 +18,8 @@ export const PLANT_TYPES = [
   { id: 'daisy', name: 'Daisy', petal: '#fbfaf5', center: '#f2c14e', leaf: '#7fae6b', petals: 14, shape: 'long' },
   { id: 'poppy', name: 'Poppy', petal: '#f08a5d', center: '#3d3a4b', leaf: '#86a86f', petals: 5, shape: 'round' },
   { id: 'cornflower', name: 'Cornflower', petal: '#6c9bd2', center: '#3f5f8f', leaf: '#8aab7d', petals: 8, shape: 'round' },
+  { id: 'rose', name: 'Rose', petal: '#d9546e', center: '#a83a52', leaf: '#6f9c6a', petals: 6, shape: 'round', milestone: true },
+  { id: 'cherry', name: 'Cherry blossom', petal: '#f6c1d0', center: '#e58aa6', leaf: '#8aab7d', petals: 5, shape: 'round', milestone: true },
   { id: 'moonflower', name: 'Moonflower', petal: '#e8ecff', center: '#c9d3ff', leaf: '#6f9c8a', petals: 5, shape: 'round', rare: true },
   { id: 'glow-orchid', name: 'Glow orchid', petal: '#d59bf0', center: '#fff2a8', leaf: '#6fa38a', petals: 5, shape: 'cup', rare: true },
 ]
@@ -61,7 +63,8 @@ export function stageProgress(water) {
 export function pickReward(plant, rand = Math.random, { guaranteed = false } = {}) {
   if (!guaranteed && rand() > 0.08) return null
   const lockedPots = POTS.filter((p) => !plant.unlockedPots.includes(p.id))
-  const lockedPlants = PLANT_TYPES.filter((p) => !plant.unlockedPlants.includes(p.id))
+  // Milestone plants are earned, never random.
+  const lockedPlants = PLANT_TYPES.filter((p) => !p.milestone && !plant.unlockedPlants.includes(p.id))
   const options = [
     ...lockedPots.map((p) => ({ kind: 'pot', id: p.id, name: p.name, rare: !!p.rare })),
     ...lockedPlants.map((p) => ({ kind: 'plant', id: p.id, name: p.name, rare: !!p.rare })),

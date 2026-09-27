@@ -4,9 +4,13 @@ import { categoryById } from './model.js'
 /** Everything that went right this week. Never what didn't happen. */
 export function weeklyRecap(state, today) {
   const start = startOfWeek(today)
-  const end = addDays(start, 6)
-  const inWeek = (d) => d >= start && d <= end
-  const done = state.completions.filter((c) => inWeek(c.date))
+  return rangeRecap(state, start, addDays(start, 6))
+}
+
+/** Everything done between two days (inclusive), e.g. the life of one plant. */
+export function rangeRecap(state, start, end) {
+  const inRange = (d) => d >= start && d <= end
+  const done = state.completions.filter((c) => inRange(c.date))
   const fun = done.filter((c) => c.type === 'want')
 
   const counts = {}
@@ -27,7 +31,7 @@ export function weeklyRecap(state, today) {
     funCount: fun.length,
     topCategories,
     activeDays,
-    bloomed: state.plant.garden.filter((p) => inWeek(p.completedAt)),
-    unlocks: state.plant.unlockLog.filter((u) => inWeek(u.date)),
+    bloomed: state.plant.garden.filter((p) => inRange(p.completedAt)),
+    unlocks: state.plant.unlockLog.filter((u) => inRange(u.date)),
   }
 }

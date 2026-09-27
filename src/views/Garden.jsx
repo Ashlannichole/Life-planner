@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import Plant from '../components/Plant.jsx'
+import PlantMemory from '../components/PlantMemory.jsx'
 import { formatShortDate } from '../lib/dates.js'
 import { BLOOM_AT, PLANT_TYPES, POTS, STAGES, plantType, stageFor, stageIndex, stageProgress } from '../lib/plant.js'
+import { MILESTONES, STAT_LABELS, upcoming } from '../lib/milestones.js'
 import { useStore } from '../store.jsx'
 
 export default function Garden({ onRecap }) {
@@ -10,6 +13,9 @@ export default function Garden({ onRecap }) {
   const stage = stageFor(current.water)
   const next = STAGES[stageIndex(current.water) + 1]
   const canSwitchType = current.water === 0
+  const [memory, setMemory] = useState(null) // { plant, current }
+  const reached = MILESTONES.filter((m) => state.milestones?.[m.id])
+  const comingUp = upcoming(state).slice(0, 2)
 
   return (
     <div className="stack">
@@ -33,6 +39,9 @@ export default function Garden({ onRecap }) {
         <p className="muted small" style={{ margin: '6px 0 0', textAlign: 'center' }}>
           Every finished task waters it — chores and fun things count the same. It never wilts; it just waits for you.
         </p>
+        <button className="btn ghost small" onClick={() => setMemory({ plant: current, current: true })}>
+          What’s happened while it grew
+        </button>
       </div>
 
       {(canSwitchType || current.needsPick) && (
@@ -76,17 +85,41 @@ export default function Garden({ onRecap }) {
           Grown plants · {garden.length}
         </p>
         {garden.length === 0 ? (
-          <p className="muted small">Plants that reach full bloom are planted here to keep forever.</p>
+          <p className="muted small">Plants that reach full bloom are planted here to keep forever. Tap one later to see what that stretch of life looked like.</p>
         ) : (
           <div className="garden-grid">
             {[...garden].reverse().map((p) => (
-              <div key={p.id} className="garden-cell">
+              <button key={p.id} className="garden-cell" onClick={() => setMemory({ plant: p })}>
                 <Plant typeId={p.typeId} potId={p.potId} stage={5} size={70} />
                 <div>{plantType(p.typeId).name}</div>
                 <div>{formatShortDate(p.completedAt)}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="section">
+        <p className="section-title">Milestones · {reached.length}</p>
+        {comingUp.length > 0 && (
+          <div className="stack" style={{ gap: 6, marginBottom: 10 }}>
+            {comingUp.map((m) => (
+              <div key={m.id} className="small muted">
+                Coming up: <b style={{ color: 'var(--ink)' }}>{m.title}</b> · {m.current} of {m.at} {STAT_LABELS[m.stat]}
               </div>
             ))}
           </div>
+        )}
+        {reached.length > 0 ? (
+          <div className="chips">
+            {reached.map((m) => (
+              <span key={m.id} className="chip on" title={`Reached ${formatShortDate(state.milestones[m.id])}`}>
+                ✨ {m.title}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="muted small">Milestones count totals, so they only ever add up. Each one unlocks something new.</p>
         )}
       </div>
 
@@ -98,12 +131,14 @@ export default function Garden({ onRecap }) {
             return (
               <div key={p.id} className={`garden-cell ${unlocked ? '' : 'locked'}`}>
                 <Plant typeId={p.id} potId="terracotta" stage={unlocked ? 5 : 1} size={56} />
-                <div>{unlocked ? p.name : p.rare ? 'Rare seed' : 'Surprise'}</div>
+                <div>{unlocked ? p.name : p.milestone ? 'Milestone' : p.rare ? 'Rare seed' : 'Surprise'}</div>
               </div>
             )
           })}
         </div>
       </div>
+
+      {memory && <PlantMemory plant={memory.plant} current={memory.current} onClose={() => setMemory(null)} />}
     </div>
   )
 }

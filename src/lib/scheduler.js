@@ -6,9 +6,9 @@
 // planned, unfinished tasks from earlier days simply flow into the next day
 // with room — rollover without any penalty or "overdue" state.
 
-import { addDays, addMonths, diffDays, isWeekend, rangeKeys, timeToMinutes, weekday } from './dates.js'
+import { addDays, addMonths, diffDays, formatDay, formatMinutes, isWeekend, rangeKeys, timeToMinutes, weekday } from './dates.js'
 import { cookingMinutesByDay } from './meals.js'
-import { PARTS } from './model.js'
+import { PARTS, categoryById } from './model.js'
 
 export const HORIZON_DAYS = 14
 
@@ -123,6 +123,8 @@ export function buildOccurrences(state, today, lastDay) {
   }
   const occs = []
   for (const task of state.tasks) {
+    // Composted tasks wait in the pile until the user decides what to do with them.
+    if (task.compost) continue
     const base = {
       taskId: task.id,
       title: task.title,
@@ -234,14 +236,37 @@ function pickBest(days, occ) {
   return best
 }
 
-function place(day, occ, reason) {
+function place(day, occ, reason, why) {
   const part = choosePart(day, occ)
-  day.items.push({ ...occ, day: day.key, part, reason })
+  day.items.push({ ...occ, day: day.key, part, reason, why })
   day.used += occ.minutes
   if (day.partUsed[part] !== undefined) day.partUsed[part] += occ.minutes
   if (occ.category) day.cats[occ.category] = (day.cats[occ.category] || 0) + 1
   day.taskIds.add(occ.taskId)
   if (occ.type === 'want') day.hasWant = true
+}
+
+// ---------------------------------------------------------------------------
+// "Why this day": one plain line per item, so the plan never feels like a black box.
+
+const REPEAT_WORDS = { daily: 'daily', weekly: 'weekly', monthly: 'monthly' }
+
+function repeatWord(occ, task) {
+  if (occ.repeat === 'everyX') return `every-${task?.everyDays || 'few'}-days`
+  return REPEAT_WORDS[occ.repeat] || 'regular'
+}
+
+/** Explain a flexible placement. Call before placing, while `fits` still reflects the choice. */
+function explainFlex(candidates, chosen, occ, today) {
+  const pref = occ.preferredTime
+  if (pref === 'weekend' && chosen.weekend) return 'You like doing this on weekends'
+  if (pref && pref !== 'weekend' && roomIn(chosen, pref) >= occ.minutes) return `Fits your ${pref} free time`
+  const earlier = candidates.filter((d) => d.key < chosen.key && fits(d, occ))
+  const length = formatMinutes(occ.minutes)
+  if (!earlier.length) return chosen.index === 0 ? `You have room for ${length} today` : `First day with room for ${length}`
+  const cat = categoryById(occ.category)
+  if (cat && earlier.some((d) => d.cats[occ.category])) return `Keeps ${cat.label.toLowerCase()} spread out across the week`
+  return `A lighter day than ${formatDay(earlier[earlier.length - 1].key, today)}`
 }
 
 // Suggested order inside a day: grouped by part of day, starting with a quick
@@ -327,10 +352,15 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     return picked
   }
 
+  const taskById = new Map(state.tasks.map((t) => [t.id, t]))
+  const eventById = new Map(state.events.map((e) => [e.id, e]))
+  const deferredNote = (occ, text) =>
+    state.deferrals?.[occ.key] && occ.kind !== 'deadline' ? 'You said not today, so it waited for a day with room' : text
+
   // 1. The user's own moves always win.
   for (const occ of take((o) => state.pins?.[o.key] && state.pins[o.key] >= today)) {
     const day = byKey.get(state.pins[occ.key])
-    if (day) place(day, occ, 'pinned')
+    if (day) place(day, occ, 'pinned', day.key === today ? 'You pulled this into today' : 'You moved it to this day')
     else unscheduled.push(occ)
   }
 
@@ -349,7 +379,15 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
       const open = window.filter((d) => !d.taskIds.has(occ.taskId) && !d.allDayBusy)
       day = (open.length ? open : window).reduce((a, b) => (b.capacity - b.used > a.capacity - a.used ? b : a))
     }
-    place(day, occ, 'deadline')
+    const event = eventById.get(occ.eventId)
+    const by = formatDay(occ.deadline, today)
+    const why =
+      occ.deadline < today
+        ? 'Its target date slipped by, so it’s up soon. No stress.'
+        : event
+          ? `Prep for ${event.title}, best done by ${by}`
+          : `Needs doing by ${by}`
+    place(day, occ, 'deadline', why)
   }
 
   // 3. Recurring tasks, each within its own repeat window.
@@ -359,7 +397,16 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
   for (const occ of recurring) {
     const window = days.filter((d) => d.key >= occ.earliest && d.key <= occ.latest)
     const day = bestDay(window, occ)
-    if (day) place(day, occ, 'recurring')
+    if (day) {
+      const word = repeatWord(occ, taskById.get(occ.taskId))
+      const why =
+        occ.repeat === 'daily'
+          ? 'Repeats every day'
+          : day.key === occ.due
+            ? `Due for its ${word} repeat`
+            : `Due for its ${word} repeat; this day had more room`
+      place(day, occ, 'recurring', deferredNote(occ, why))
+    }
     // A repeat that doesn't fit is simply skipped; the next one will come around.
   }
 
@@ -375,7 +422,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     if (!candidates.length) continue
     const pick = candidates.reduce((a, b) => (score(day, b) < score(day, a) ? b : a))
     wants = wants.filter((o) => o !== pick)
-    place(day, pick, 'fun')
+    place(day, pick, 'fun', deferredNote(pick, 'Your fun pick for the day. Fun gets real time too.'))
   }
 
   // 5. Everything else, alternating need-to and want-to so fun isn't crowded out.
@@ -383,11 +430,9 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     for (const list of [needs, wants]) {
       const occ = list.shift()
       if (!occ) continue
-      const day = bestDay(
-        days.filter((d) => d.key >= occ.earliest),
-        occ,
-      )
-      if (day) place(day, occ, 'flex')
+      const candidates = days.filter((d) => d.key >= occ.earliest)
+      const day = bestDay(candidates, occ)
+      if (day) place(day, occ, 'flex', deferredNote(occ, explainFlex(candidates, day, occ, today)))
       else unscheduled.push(occ)
     }
   }

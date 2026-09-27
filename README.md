@@ -78,6 +78,18 @@ need-to and want-to.
 - **Apple Health sync** (Oura ring calories burned, VeSync scale calories eaten) needs the native iPhone app
   (Capacitor) and is planned for that phase.
 
+## Trust and gentle motivation
+
+- **Why this day**: every scheduled task carries one plain line explaining its placement ("Prep for Portland trip,
+  best done by Thu", "Keeps cleaning spread out across the week", "You said not today…"). Shown when you tap a task
+  and in Focus mode.
+- **Compost pile** (`src/lib/compost.js`): a one-off task pushed 5 times ("not today", moved later, or left on a
+  day that ended) leaves the plan and waits in Tasks → Compost pile. Pick a real day, break it into small steps,
+  give it another go, or compost it (which still waters the plant).
+- **Milestones** (`src/lib/milestones.js`): based on totals only (tasks, fun tasks, days you showed up, plants grown),
+  so they never reset. Each unlocks a color theme, pot or milestone-only plant.
+- **Plant memories**: tap any grown plant in the garden to see what life looked like while it grew.
+
 ## Not in v1
 
 Everything in the v2 section of the spec (accounts, sync, friends, shared garden, body doubling,

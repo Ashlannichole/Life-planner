@@ -76,7 +76,7 @@ export default function Week() {
     if (!over) return
     const item = active.data.current
     if (over.id === item.day) return
-    actions.moveToDay(item.key, over.id)
+    actions.moveToDay(item.key, over.id, item.day)
     toast(`Moved to ${formatDay(over.id, today)}`)
   }
 

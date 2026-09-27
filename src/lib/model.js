@@ -158,7 +158,11 @@ export function initialState() {
       recapSeen: null,
       nutrition: false,
       calorieTarget: null,
+      theme: 'sage',
     },
     energy: {},
+    milestones: {},
+    unlockedThemes: ['sage'],
+    planSnapshot: null,
   }
 }

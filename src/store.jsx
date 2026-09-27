@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { addDays, todayKey } from './lib/dates.js'
 import { initialState, makeTask, makeTemplate, uid } from './lib/model.js'
+import { addPush, planSnapshot, rollPushes, sameSnapshot } from './lib/compost.js'
 import { groceryList, suggestMeals } from './lib/meals.js'
+import { applyMilestones } from './lib/milestones.js'
 import { unwater, water } from './lib/plant.js'
 import { makePrepTasks, reschedulePrepTasks } from './lib/prep.js'
 import { buildSchedule } from './lib/scheduler.js'
@@ -9,6 +11,14 @@ import { playChime, playCheck } from './lib/sound.js'
 import { housekeep, loadState, migrate, saveState } from './lib/storage.js'
 
 const StoreContext = createContext(null)
+
+function plantEvents(events, plant) {
+  const queue = []
+  if (events.bloomed) queue.push({ kind: 'bloom', plant: events.bloomed })
+  else if (events.stageUp) queue.push({ kind: 'stage', stage: events.stageUp, plant })
+  if (events.reward) queue.push({ kind: 'reward', reward: events.reward })
+  return queue
+}
 
 function useToday() {
   const [today, setToday] = useState(() => todayKey())
@@ -27,7 +37,7 @@ function useToday() {
 
 export function StoreProvider({ children }) {
   const today = useToday()
-  const [state, setState] = useState(() => housekeep(loadState(), todayKey()))
+  const [state, setState] = useState(() => housekeep(rollPushes(loadState(), todayKey()), todayKey()))
   const stateRef = useRef(state)
   // Celebrations to show (stage ups, blooms, surprise rewards). Not persisted.
   const [celebrations, setCelebrations] = useState([])
@@ -41,13 +51,30 @@ export function StoreProvider({ children }) {
   const update = useCallback((fn) => commit(fn(stateRef.current)), [commit])
 
   useEffect(() => {
-    update((s) => housekeep(s, today))
+    // A new day: count pushes for anything left on yesterday's plan, then tidy up.
+    update((s) => housekeep(rollPushes(s, today), today))
   }, [today, update])
 
   const schedule = useMemo(() => buildSchedule(state, { today }), [state, today])
   // Read through a ref so `actions` stays stable while the schedule changes.
   const scheduleRef = useRef(schedule)
   scheduleRef.current = schedule
+
+  // Keep a note of what's on today's plan, so tomorrow can tell what rolled over.
+  useEffect(() => {
+    const snap = planSnapshot(schedule, today)
+    if (!sameSnapshot(stateRef.current.planSnapshot, snap)) commit({ ...stateRef.current, planSnapshot: snap })
+  }, [schedule, today, commit])
+
+  // Reached milestones and grown plants ask for a celebration.
+  const celebrate = useCallback((queue) => {
+    if (!queue.length) return
+    setTimeout(() => {
+      if (stateRef.current.settings.sound) playChime()
+      setCelebrations((c) => [...c, ...queue])
+    }, 700)
+  }, [])
+
 
   const actions = useMemo(() => {
     const sound = (fn) => stateRef.current.settings.sound && fn()
@@ -84,24 +111,19 @@ export function StoreProvider({ children }) {
         const { plant, events } = water(s.plant, today)
         const pins = { ...s.pins }
         delete pins[occ.key]
-        commit({
-          ...s,
-          plant,
-          pins,
-          completions: [...s.completions, completion],
-          tasks: s.tasks.map((t) => (t.id === occ.taskId && t.repeat === 'none' ? { ...t, doneAt: today } : t)),
-        })
+        const { state: next, reached } = applyMilestones(
+          {
+            ...s,
+            plant,
+            pins,
+            completions: [...s.completions, completion],
+            tasks: s.tasks.map((t) => (t.id === occ.taskId && t.repeat === 'none' ? { ...t, doneAt: today } : t)),
+          },
+          today,
+        )
+        commit(next)
         sound(playCheck)
-        const queue = []
-        if (events.bloomed) queue.push({ kind: 'bloom', plant: events.bloomed })
-        else if (events.stageUp) queue.push({ kind: 'stage', stage: events.stageUp, plant })
-        if (events.reward) queue.push({ kind: 'reward', reward: events.reward })
-        if (queue.length) {
-          setTimeout(() => {
-            sound(playChime)
-            setCelebrations((c) => [...c, ...queue])
-          }, 700)
-        }
+        celebrate([...plantEvents(events, plant), ...reached.map((m) => ({ kind: 'milestone', milestone: m }))])
         return completion
       },
       uncomplete(completionId) {
@@ -120,19 +142,61 @@ export function StoreProvider({ children }) {
       },
 
       // ---- moving things around
-      moveToDay(occKey, dayKey) {
+      /** Move an item to a day. Moving it later than where it was counts as a push. */
+      moveToDay(occKey, dayKey, fromDay) {
         update((s) => {
           const deferrals = { ...s.deferrals }
           delete deferrals[occKey]
-          return { ...s, pins: { ...s.pins, [occKey]: dayKey }, deferrals }
+          const tasks = fromDay && dayKey > fromDay ? addPush(s.tasks, occKey) : s.tasks
+          return { ...s, tasks, pins: { ...s.pins, [occKey]: dayKey }, deferrals }
         })
       },
       notToday(occKey) {
         update((s) => {
           const pins = { ...s.pins }
           delete pins[occKey]
-          return { ...s, pins, deferrals: { ...s.deferrals, [occKey]: addDays(today, 1) } }
+          return {
+            ...s,
+            tasks: addPush(s.tasks, occKey),
+            pins,
+            deferrals: { ...s.deferrals, [occKey]: addDays(today, 1) },
+          }
         })
+      },
+
+      // ---- compost pile
+      compostSchedule(taskId, day) {
+        update((s) => ({
+          ...s,
+          tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, compost: false, pushes: 0 } : t)),
+          pins: { ...s.pins, [taskId]: day },
+        }))
+      },
+      compostRetry(taskId) {
+        update((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, compost: false, pushes: 0 } : t)) }))
+      },
+      compostBreakUp(taskId, steps) {
+        update((s) => {
+          const original = s.tasks.find((t) => t.id === taskId)
+          if (!original) return s
+          const created = steps.map((title, i) =>
+            makeTask({
+              title,
+              type: original.type,
+              category: original.category,
+              minutes: 15,
+              createdAt: Date.now() + i,
+            }),
+          )
+          return { ...s, tasks: [...s.tasks.filter((t) => t.id !== taskId), ...created] }
+        })
+      },
+      /** Let a task go. Composting still feeds the plant a little. */
+      compostDelete(taskId) {
+        const s = stateRef.current
+        const { plant, events } = water(s.plant, today)
+        commit({ ...s, plant, tasks: s.tasks.filter((t) => t.id !== taskId) })
+        celebrate(plantEvents(events, plant))
       },
       setDayOrder(dayKey, keys) {
         update((s) => ({ ...s, dayOrder: { ...s.dayOrder, [dayKey]: keys } }))
@@ -348,7 +412,7 @@ export function StoreProvider({ children }) {
         commit(initialState())
       },
     }
-  }, [commit, update, today])
+  }, [commit, update, today, celebrate])
 
   const value = useMemo(
     () => ({ state, schedule, today, actions, celebrations }),

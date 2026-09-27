@@ -17,6 +17,11 @@ export default function ItemMenu({ item, onClose, onFocus }) {
 
   return (
     <Sheet title={item.title} onClose={onClose}>
+      {item.why && (
+        <p className="why">
+          <span aria-hidden="true">💡</span> <span>{item.why}</span>
+        </p>
+      )}
       {mode === 'menu' ? (
         <div className="menu">
           <button
@@ -70,7 +75,7 @@ export default function ItemMenu({ item, onClose, onFocus }) {
               <button
                 key={d}
                 onClick={() => {
-                  actions.moveToDay(item.key, d)
+                  actions.moveToDay(item.key, d, item.day)
                   toast(`Moved to ${formatDay(d, today)}`)
                   onClose()
                 }}

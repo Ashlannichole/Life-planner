@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Celebration from './components/Celebration.jsx'
 import Focus from './components/Focus.jsx'
 import Recap from './components/Recap.jsx'
 import { Icon, ToastProvider } from './components/ui.jsx'
+import { THEMES } from './lib/milestones.js'
 import { useStore } from './store.jsx'
 import Events from './views/Events.jsx'
 import Garden from './views/Garden.jsx'
@@ -22,8 +23,21 @@ const TABS = [
   { id: 'garden', label: 'Garden', icon: 'plant' },
 ]
 
+// Accent colors for each theme, in light and dark mode.
+const THEME_CSS = THEMES.map(
+  (t) => `
+[data-theme='${t.id}'] { --accent: ${t.light}; --need: ${t.light}; --accent-soft: ${t.softLight}; --need-soft: ${t.softLight}; }
+@media (prefers-color-scheme: dark) {
+  [data-theme='${t.id}'] { --accent: ${t.dark}; --need: ${t.dark}; --accent-soft: ${t.softDark}; --need-soft: ${t.softDark}; }
+}`,
+).join('\n')
+
 export default function App() {
   const { state } = useStore()
+  const theme = state.settings.theme || 'sage'
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+  }, [theme])
   const [tab, setTab] = useState('today')
   const [focus, setFocus] = useState(null) // { key } when open
   const [recapOpen, setRecapOpen] = useState(false)
@@ -31,6 +45,7 @@ export default function App() {
   if (!state.onboarded) {
     return (
       <ToastProvider>
+        <style>{THEME_CSS}</style>
         <Onboarding />
       </ToastProvider>
     )
@@ -45,6 +60,7 @@ export default function App() {
 
   return (
     <ToastProvider>
+      <style>{THEME_CSS}</style>
       <div className="app">
         {tab !== 'settings' && (
           <div className="topbar" style={{ marginBottom: 4, justifyContent: 'flex-end' }}>

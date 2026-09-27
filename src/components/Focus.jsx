@@ -120,6 +120,7 @@ export default function Focus({ startKey, onClose }) {
                 </span>
                 <div className="focus-title">{current.title}</div>
                 <span className="muted">{durationLabel(current.minutes)}</span>
+                {current.why && <span className="small muted">💡 {current.why}</span>}
                 <Timer key={current.key} minutes={current.minutes} soundOn={state.settings.sound} />
               </div>
             </div>

@@ -4,6 +4,7 @@ import TemplateEditor, { weeklyFreeMinutes } from '../components/TemplateEditor.
 import { Icon, Toggle, useToast } from '../components/ui.jsx'
 import { formatMinutes } from '../lib/dates.js'
 import { APP_NAME, DEFAULT_TEMPLATE_BLOCKS, uid } from '../lib/model.js'
+import { MILESTONES, THEMES } from '../lib/milestones.js'
 import { allPrepTemplates } from '../lib/prep.js'
 import { useStore } from '../store.jsx'
 
@@ -107,6 +108,28 @@ export default function Settings({ onBack }) {
           </div>
         </div>
       )}
+
+      <div className="section">
+        <p className="section-title">Color theme</p>
+        <div className="chips">
+          {THEMES.map((t) => {
+            const unlocked = (state.unlockedThemes || ['sage']).includes(t.id)
+            const hint = MILESTONES.find((m) => m.reward.kind === 'theme' && m.reward.id === t.id)
+            return (
+              <button
+                key={t.id}
+                className={`chip ${state.settings.theme === t.id ? 'on' : ''}`}
+                disabled={!unlocked}
+                style={{ opacity: unlocked ? 1 : 0.5 }}
+                title={unlocked ? t.name : `Unlocks at: ${hint?.title}`}
+                onClick={() => actions.updateSettings({ theme: t.id })}
+              >
+                <span className="theme-swatch" style={{ background: t.light }} aria-hidden="true" /> {unlocked ? t.name : `🔒 ${hint?.title}`}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       <div className="section">
         <p className="section-title">Nutrition (optional)</p>

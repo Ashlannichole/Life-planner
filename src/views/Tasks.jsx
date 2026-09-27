@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import CompostSheet from '../components/CompostSheet.jsx'
 import TaskEditor from '../components/TaskEditor.jsx'
 import { Icon, useToast } from '../components/ui.jsx'
 import { formatDay } from '../lib/dates.js'
@@ -46,7 +47,9 @@ export default function Tasks() {
   const [editing, setEditing] = useState(null) // task, or { new: true, title }
   const [showDone, setShowDone] = useState(false)
 
-  const active = state.tasks.filter((t) => t.repeat !== 'none' || !t.doneAt)
+  const [composting, setComposting] = useState(null)
+  const pile = state.tasks.filter((t) => t.compost && !t.doneAt)
+  const active = state.tasks.filter((t) => (t.repeat !== 'none' || !t.doneAt) && !t.compost)
   const done = state.tasks.filter((t) => t.repeat === 'none' && t.doneAt).sort((a, b) => b.doneAt.localeCompare(a.doneAt))
   const needs = active.filter((t) => t.type !== 'want')
   const wants = active.filter((t) => t.type === 'want')
@@ -130,6 +133,29 @@ export default function Tasks() {
         </div>
       )}
 
+      {pile.length > 0 && (
+        <div className="section">
+          <p className="section-title">🍂 Compost pile · {pile.length}</p>
+          <p className="small muted" style={{ margin: '0 0 8px' }}>
+            These kept getting pushed, so they’re out of the plan for now. Tap one to decide what to do. Letting go is allowed.
+          </p>
+          <div className="task-list">
+            {pile.map((t) => (
+              <button key={t.id} className="task-item compost" onClick={() => setComposting(t)}>
+                <span className="stripe" />
+                <span className="body">
+                  <span className="title" style={{ display: 'block' }}>
+                    {t.title}
+                  </span>
+                  <span className="meta">Pushed {t.pushes} times</span>
+                </span>
+                <span className="small muted">Decide</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {section('Need to', needs)}
       {section('Want to', wants)}
 
@@ -154,6 +180,7 @@ export default function Tasks() {
         </div>
       )}
 
+      {composting && <CompostSheet task={composting} onClose={() => setComposting(null)} />}
       {editing && (
         <TaskEditor
           task={editing.new ? null : editing}

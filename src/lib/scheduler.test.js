@@ -187,3 +187,37 @@ describe('low-energy days', () => {
     expect(low.planned).toBeLessThan(normal.planned)
   })
 })
+
+describe('why this day', () => {
+  const why = (sched, taskId) => sched.days.flatMap((d) => d.items).find((i) => i.taskId === taskId)?.why
+
+  it('explains every kind of placement in one plain line', () => {
+    const trip = { id: 'trip', title: 'Portland trip', date: addDays(MON, 10) }
+    const prep = task('Book lodging', { eventId: 'trip', deadline: addDays(MON, 3) })
+    const daily = task('Make bed', { repeat: 'daily', minutes: 5 })
+    const fun = task('Crochet', { type: 'want' })
+    const weekend = task('Bake bread', { preferredTime: 'weekend', type: 'want', createdAt: 2 })
+    const pinned = task('Call dentist')
+    const deferred = task('Sort mail')
+    const s = stateWith({
+      tasks: [prep, daily, fun, weekend, pinned, deferred],
+      events: [trip],
+      pins: { [pinned.id]: MON },
+      deferrals: { [deferred.id]: addDays(MON, 1) },
+    })
+    const sched = buildSchedule(s, { today: MON })
+    expect(why(sched, prep.id)).toMatch(/^Prep for Portland trip, best done by /)
+    expect(why(sched, daily.id)).toBe('Repeats every day')
+    expect(why(sched, fun.id)).toMatch(/fun pick/)
+    expect(why(sched, weekend.id)).toMatch(/weekends|fun pick/)
+    expect(why(sched, pinned.id)).toBe('You pulled this into today')
+    expect(why(sched, deferred.id)).toMatch(/not today/)
+  })
+
+  it('names spreading out a category as the reason', () => {
+    const tasks = ['Dishes', 'Mop'].map((t, i) => task(t, { minutes: 15, category: 'cleaning', createdAt: i }))
+    const sched = buildSchedule(stateWith({ tasks }), { today: MON })
+    expect(why(sched, tasks[0].id)).toMatch(/room/)
+    expect(why(sched, tasks[1].id)).toBe('Keeps cleaning spread out across the week')
+  })
+})

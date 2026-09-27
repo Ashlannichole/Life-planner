@@ -454,6 +454,9 @@ textarea.input {
   background: var(--need);
   opacity: 0.6;
 }
+.task-item.compost .stripe {
+  background: #b8925f;
+}
 .task-item.want .stripe {
   background: var(--want);
 }
@@ -687,6 +690,33 @@ textarea.input {
   border-radius: 12px;
   background: var(--surface-2);
   min-height: 44px;
+}
+
+/* ---------- themes */
+
+.theme-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  vertical-align: -2px;
+}
+.theme-swatch.big {
+  width: 72px;
+  height: 72px;
+  box-shadow: inset 0 0 0 6px rgb(255 255 255 / 35%);
+}
+
+/* ---------- why this day */
+
+.why {
+  display: flex;
+  gap: 8px;
+  margin: -4px 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-size: 0.9rem;
 }
 
 /* ---------- sheet */

@@ -36,7 +36,7 @@ describe('plant', () => {
     const complete = {
       ...plant,
       unlockedPots: POTS.map((p) => p.id),
-      unlockedPlants: PLANT_TYPES.map((p) => p.id),
+      unlockedPlants: PLANT_TYPES.filter((p) => !p.milestone).map((p) => p.id),
     }
     expect(pickReward(complete, () => 0, { guaranteed: true })).toBeNull()
   })
