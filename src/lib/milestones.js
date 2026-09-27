@@ -29,10 +29,12 @@ export const MILESTONES = [
 export const STAT_LABELS = { tasks: 'things done', fun: 'fun things', days: 'days you showed up', plants: 'plants grown' }
 
 export function totals(state) {
-  const days = new Set(state.completions.map((c) => c.date))
+  // Older check-offs are compacted into per-day summaries; count both.
+  const past = Object.entries(state.history?.days || {})
+  const days = new Set([...state.completions.map((c) => c.date), ...past.map(([date]) => date)])
   return {
-    tasks: state.completions.length,
-    fun: state.completions.filter((c) => c.type === 'want').length,
+    tasks: state.completions.length + past.reduce((t, [, d]) => t + (d.n || 0), 0),
+    fun: state.completions.filter((c) => c.type === 'want').length + past.reduce((t, [, d]) => t + (d.f || 0), 0),
     days: days.size,
     plants: state.plant.garden.length,
   }

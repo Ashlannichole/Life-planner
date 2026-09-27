@@ -7,6 +7,7 @@
 // with room — rollover without any penalty or "overdue" state.
 
 import { addDays, addMonths, diffDays, formatDay, formatMinutes, isWeekend, rangeKeys, timeToMinutes, weekday } from './dates.js'
+import { taskHistory } from './history.js'
 import { cookingMinutesByDay } from './meals.js'
 import { PARTS, categoryById } from './model.js'
 
@@ -149,8 +150,8 @@ export function buildOccurrences(state, today, lastDay) {
       })
       continue
     }
-    const comps = byTask[task.id] || []
-    const lastDone = comps.reduce((m, c) => (c.date > m ? c.date : m), '')
+    // Older check-offs live in the compacted history, so count those too.
+    const { count, last: lastDone } = taskHistory(state, task.id, byTask[task.id] || [])
     let due = lastDone ? nextDue(task, lastDone) : task.startDate || today
     // Missed repeats are not stacked up: only the current one is kept.
     if (due < today) due = today
@@ -158,7 +159,7 @@ export function buildOccurrences(state, today, lastDay) {
       const next = nextDue(task, due)
       occs.push({
         ...base,
-        key: `${task.id}:${comps.length + i}`,
+        key: `${task.id}:${count + i}`,
         earliest: due,
         latest: addDays(next, -1),
         due,

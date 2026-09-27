@@ -5,9 +5,16 @@ import { syncOnce } from './sync.js'
 /** In-memory stand-in for the planner_state table. */
 function fakeRemote() {
   const rows = new Map()
+  const calls = { get: 0, getVersion: 0 }
   return {
     rows,
+    calls,
+    async getVersion(userId) {
+      calls.getVersion += 1
+      return rows.get(userId)?.version ?? null
+    },
     async get(userId) {
+      calls.get += 1
       const row = rows.get(userId)
       return row ? structuredClone(row) : null
     },
@@ -64,12 +71,25 @@ describe('syncOnce', () => {
     expect(meta.version).toBe(remote.rows.get('u1').version)
   })
 
-  it('does nothing when nothing changed', async () => {
+  it('does nothing when nothing changed, without downloading the plan', async () => {
     const remote = fakeRemote()
     const phone = { ...initialState(), onboarded: true }
     const first = await syncOnce(remote, 'u1', phone, null)
+    const downloads = remote.calls.get
     const again = await syncOnce(remote, 'u1', phone, first.meta)
     expect(again.state).toBeNull()
     expect(remote.rows.get('u1').version).toBe(1)
+    expect(remote.calls.get).toBe(downloads)
+  })
+
+  it('uploads local edits without downloading the plan first', async () => {
+    const remote = fakeRemote()
+    const phone = { ...initialState(), onboarded: true }
+    const first = await syncOnce(remote, 'u1', phone, null)
+    const downloads = remote.calls.get
+    const { meta } = await syncOnce(remote, 'u1', withTask(phone, 'laundry'), first.meta)
+    expect(meta.version).toBe(2)
+    expect(remote.calls.get).toBe(downloads)
+    expect(remote.rows.get('u1').data.tasks[0].id).toBe('laundry')
   })
 })

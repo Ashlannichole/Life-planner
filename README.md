@@ -28,6 +28,10 @@ variables, the app stays local-only.
 - `src/lib/sync.js`: one `planner_state` row per account with a version number, so concurrent saves merge
   instead of overwriting.
 - `src/cloud.js`: sign-in and the background sync loop.
+- `src/lib/history.js`: keeps each account small. Check-offs older than 90 days fold into tiny per-day and
+  per-task summaries, which the recap, milestones, plant memories and repeating tasks all read, so nothing
+  visible changes. A year of heavy use adds roughly 15–20 KB.
+- Syncing first asks only for the version number; the full plan is downloaded only when another device changed it.
 
 ## How it's built
 

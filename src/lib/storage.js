@@ -1,3 +1,4 @@
+import { compactHistory } from './history.js'
 import { initialState } from './model.js'
 
 const KEY = 'sprout-planner:v1'
@@ -40,5 +41,5 @@ export function housekeep(state, today) {
   const deferrals = Object.fromEntries(Object.entries(state.deferrals || {}).filter(([, d]) => d > today))
   const dayOrder = Object.fromEntries(Object.entries(state.dayOrder || {}).filter(([d]) => d >= today))
   const energy = Object.fromEntries(Object.entries(state.energy || {}).filter(([d]) => d >= today))
-  return { ...state, pins, deferrals, dayOrder, energy }
+  return compactHistory({ ...state, pins, deferrals, dayOrder, energy }, today)
 }
