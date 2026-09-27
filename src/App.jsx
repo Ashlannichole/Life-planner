@@ -6,6 +6,7 @@ import { Icon, ToastProvider } from './components/ui.jsx'
 import { useStore } from './store.jsx'
 import Events from './views/Events.jsx'
 import Garden from './views/Garden.jsx'
+import Meals from './views/Meals.jsx'
 import Onboarding from './views/Onboarding.jsx'
 import Settings from './views/Settings.jsx'
 import Tasks from './views/Tasks.jsx'
@@ -16,6 +17,7 @@ const TABS = [
   { id: 'today', label: 'Today', icon: 'today' },
   { id: 'week', label: 'Week', icon: 'week' },
   { id: 'tasks', label: 'Tasks', icon: 'list' },
+  { id: 'meals', label: 'Meals', icon: 'meals' },
   { id: 'events', label: 'Events', icon: 'event' },
   { id: 'garden', label: 'Garden', icon: 'plant' },
 ]
@@ -55,6 +57,7 @@ export default function App() {
           {tab === 'today' && <Today onFocus={openFocus} onNavigate={go} onRecap={openRecap} />}
           {tab === 'week' && <Week />}
           {tab === 'tasks' && <Tasks />}
+          {tab === 'meals' && <Meals />}
           {tab === 'events' && <Events />}
           {tab === 'garden' && <Garden onRecap={openRecap} />}
           {tab === 'settings' && <Settings onBack={() => go('today')} />}

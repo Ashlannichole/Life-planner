@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { addDays, todayKey } from './lib/dates.js'
 import { initialState, makeTask, makeTemplate, uid } from './lib/model.js'
+import { groceryList, suggestMeals } from './lib/meals.js'
 import { unwater, water } from './lib/plant.js'
 import { makePrepTasks, reschedulePrepTasks } from './lib/prep.js'
 import { buildSchedule } from './lib/scheduler.js'
@@ -224,6 +225,86 @@ export function StoreProvider({ children }) {
       },
       deletePackingList(id) {
         update((s) => ({ ...s, packingLists: s.packingLists.filter((p) => p.id !== id) }))
+      },
+
+      // ---- meals
+      saveRecipe(recipe) {
+        update((s) => {
+          const exists = s.recipes.some((r) => r.id === recipe.id)
+          return {
+            ...s,
+            recipes: exists ? s.recipes.map((r) => (r.id === recipe.id ? recipe : r)) : [...s.recipes, recipe],
+          }
+        })
+      },
+      deleteRecipe(id) {
+        update((s) => ({
+          ...s,
+          recipes: s.recipes.filter((r) => r.id !== id),
+          mealPlan: Object.fromEntries(
+            Object.entries(s.mealPlan).map(([day, slots]) => [
+              day,
+              Object.fromEntries(Object.entries(slots).filter(([, rid]) => rid !== id)),
+            ]),
+          ),
+        }))
+      },
+      setMeal(day, slot, recipeId) {
+        update((s) => ({ ...s, mealPlan: { ...s.mealPlan, [day]: { ...(s.mealPlan[day] || {}), [slot]: recipeId } } }))
+      },
+      suggestMeals() {
+        update((s) => ({ ...s, mealPlan: suggestMeals(s, today) }))
+      },
+      setGroceryStatus(key, status) {
+        update((s) => {
+          const checks = { ...s.groceries.checks }
+          if (status) checks[key] = { status, date: today }
+          else delete checks[key]
+          return { ...s, groceries: { ...s.groceries, checks } }
+        })
+      },
+      addGroceryExtra(name) {
+        update((s) => ({ ...s, groceries: { ...s.groceries, extras: [...s.groceries.extras, { id: uid(), name }] } }))
+      },
+      removeGroceryExtra(id) {
+        update((s) => {
+          const checks = { ...s.groceries.checks }
+          delete checks[`extra:${id}`]
+          return { ...s, groceries: { checks, extras: s.groceries.extras.filter((e) => e.id !== id) } }
+        })
+      },
+      clearGroceries() {
+        // Bought extras are done; everything else starts unchecked again.
+        update((s) => ({
+          ...s,
+          groceries: {
+            checks: {},
+            extras: s.groceries.extras.filter((e) => s.groceries.checks[`extra:${e.id}`]?.status !== 'got'),
+          },
+        }))
+      },
+      /** Add (or move) one "Grocery shopping" task, due before the first meal that needs something. */
+      planShoppingTrip() {
+        const s = stateRef.current
+        const needed = groceryList(s, today).filter((i) => !i.status)
+        if (!needed.length) return null
+        const firstDay = needed.map((i) => i.firstDay).filter(Boolean).sort()[0]
+        const deadline = firstDay && firstDay > today ? addDays(firstDay, -1) : today
+        const existing = s.tasks.find((t) => t.groceryTrip && !t.doneAt)
+        if (existing) {
+          commit({ ...s, tasks: s.tasks.map((t) => (t === existing ? { ...t, deadline } : t)) })
+          return existing.id
+        }
+        const task = makeTask({
+          title: 'Grocery shopping',
+          type: 'need',
+          minutes: 60,
+          category: 'errands',
+          deadline,
+          groceryTrip: true,
+        })
+        commit({ ...s, tasks: [...s.tasks, task] })
+        return task.id
       },
 
       // ---- plant

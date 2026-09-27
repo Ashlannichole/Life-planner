@@ -9,6 +9,7 @@ import { Icon, useToast } from '../components/ui.jsx'
 import { WEEKDAY_LONG, formatShortDate, formatTime, weekday } from '../lib/dates.js'
 import { categoryById, durationLabel } from '../lib/model.js'
 import { stageFor, stageProgress } from '../lib/plant.js'
+import { MEAL_SLOTS } from '../lib/meals.js'
 import { useStore } from '../store.jsx'
 
 function greeting() {
@@ -134,6 +135,24 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
             </div>
           ))}
         </div>
+      )}
+
+      {MEAL_SLOTS.some((s) => state.mealPlan[today]?.[s.id]) && (
+        <button className="event-pill meal-pill" onClick={() => onNavigate('meals')}>
+          <span style={{ fontSize: '1.2rem' }}>🍽</span>
+          <span className="stack" style={{ gap: 0 }}>
+            {MEAL_SLOTS.map((s) => {
+              const recipe = state.recipes.find((r) => r.id === state.mealPlan[today]?.[s.id])
+              return (
+                recipe && (
+                  <span key={s.id}>
+                    <span className="small muted">{s.label}:</span> <b>{recipe.name}</b>
+                  </span>
+                )
+              )
+            })}
+          </span>
+        </button>
       )}
 
       {items.length > 0 ? (

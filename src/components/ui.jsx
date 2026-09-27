@@ -31,6 +31,7 @@ const paths = {
   play: <path d="M8 5v14l11-7z" />,
   pause: <path d="M8 5v14M16 5v14" />,
   sparkle: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z" />,
+  meals: <path d="M4 11h16a8 8 0 0 1-16 0zM3 11h18M9 4c0 2 1.5 2 1.5 4M13.5 4c0 2 1.5 2 1.5 4" />,
   bag: <path d="M6 8h12l-1 12H7zM9 8V6a3 3 0 0 1 6 0v2" />,
 }
 

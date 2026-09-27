@@ -120,6 +120,16 @@ export default function Week() {
                     {e.title}
                   </span>
                 ))}
+                {['lunch', 'dinner'].map((slot) => {
+                  const recipe = state.recipes.find((r) => r.id === state.mealPlan[key]?.[slot])
+                  return (
+                    recipe && (
+                      <span key={slot} className="week-chip meal">
+                        🍽 {recipe.name}
+                      </span>
+                    )
+                  )
+                })}
                 {done.map((c) => (
                   <span key={c.id} className={`week-chip done ${c.type}`}>
                     ✓ {c.title}

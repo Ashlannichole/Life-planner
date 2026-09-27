@@ -7,6 +7,7 @@
 // with room — rollover without any penalty or "overdue" state.
 
 import { addDays, addMonths, diffDays, isWeekend, rangeKeys, timeToMinutes, weekday } from './dates.js'
+import { cookingMinutesByDay } from './meals.js'
 import { PARTS } from './model.js'
 
 export const HORIZON_DAYS = 14
@@ -288,6 +289,15 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
   }))
   const byKey = new Map(days.map((d) => [d.key, d]))
 
+  // Planned meals take cooking time, so those days get less other work.
+  const cooking = cookingMinutesByDay(state)
+  for (const day of days) {
+    const minutes = cooking[day.key] || 0
+    if (!minutes) continue
+    day.used += minutes
+    day.cats.cooking = (day.cats.cooking || 0) + 1
+  }
+
   // Work already done today uses up today's time.
   const doneToday = state.completions.filter((c) => c.date === today)
   const first = days[0]
@@ -384,6 +394,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
       capacity: d.capacity,
       freeMinutes: d.freeMinutes,
       used: d.used,
+      cookingMinutes: cooking[d.key] || 0,
       planned: items.reduce((t, i) => t + i.minutes, 0),
       allDayBusy: d.allDayBusy,
       eventMinutes: d.eventMinutes,

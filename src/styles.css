@@ -170,9 +170,10 @@ h3 {
   align-items: center;
   gap: 2px;
   padding: 10px 0 8px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--muted);
   font-weight: 600;
+  min-width: 0;
 }
 .tab svg {
   width: 24px;
@@ -280,6 +281,19 @@ h3 {
   border-radius: 999px;
   font-weight: 650;
   color: var(--muted);
+}
+.segmented button {
+  white-space: nowrap;
+}
+.segmented .count {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.72rem;
+  line-height: 20px;
 }
 .segmented button.on {
   background: var(--surface);
@@ -644,6 +658,10 @@ textarea.input {
   background: var(--event-soft);
   touch-action: auto;
 }
+.week-chip.meal {
+  background: var(--event-soft);
+  touch-action: auto;
+}
 .week-chip.done {
   opacity: 0.6;
   text-decoration: line-through;
@@ -654,6 +672,21 @@ textarea.input {
 .drag-overlay-chip {
   box-shadow: 0 10px 30px rgb(0 0 0 / 18%);
   transform: scale(1.05);
+}
+
+.meal-pill {
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.meal-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  min-height: 44px;
 }
 
 /* ---------- sheet */

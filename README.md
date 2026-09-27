@@ -29,6 +29,7 @@ Every push to the default branch then deploys, and every PR gets a preview URL. 
 | `src/lib/scheduler.js` | The rule-based scheduler (pure functions, fully tested) |
 | `src/lib/model.js` | Data shapes, defaults, categories, built-in trip template, app name |
 | `src/lib/plant.js` | Growth stages, garden, surprise rewards |
+| `src/lib/meals.js` | Recipes, meal plan suggestions, grocery list (tested) |
 | `src/lib/prep.js` | Event prep tasks scheduled backward from the event |
 | `src/store.jsx` | App state, persistence and all user actions |
 | `src/views/*` | Today, Week, Tasks (brain dump), Events, Garden, Settings, Onboarding |
@@ -55,6 +56,16 @@ Each day choice is scored: sooner is better, fuller days are worse, the same cat
 is worse (spreads chores out), and a matching preferred time is better. "Weekend" is treated as a firm preference.
 Within a day, tasks are grouped morning/afternoon/evening, start with a quick warm-up task, then alternate
 need-to and want-to.
+
+## Meals and groceries
+
+- **Recipes** are saved once and reused. Ingredients are typed one per line ("2 cups rice"), and the amount is split from the name.
+- **Meal plan**: lunch and dinner for the next 7 days. "Suggest meals" fills empty slots, rotating
+  least-recently-used recipes and avoiding repeats in the same week. Lunches are only suggested once you have a lunch recipe.
+- **Grocery list** is built from the planned meals. Matching ingredients are merged ("onions" = "onion") and amounts with the same
+  unit are added up. Mark items "Got it" or "Have it"; a check-off lasts a week, so next week's meals ask again.
+- **Planner integration**: a recipe's cooking time counts against that day's free time. "Add a shopping trip"
+  creates one Grocery shopping task, due before the first meal that needs something.
 
 ## Not in v1
 
