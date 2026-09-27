@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import AccountSheet from '../components/AccountSheet.jsx'
 import PrepTemplateEditor from '../components/PrepTemplateEditor.jsx'
 import TemplateEditor, { weeklyFreeMinutes } from '../components/TemplateEditor.jsx'
 import { Icon, Toggle, useToast } from '../components/ui.jsx'
@@ -8,9 +9,17 @@ import { MILESTONES, THEMES } from '../lib/milestones.js'
 import { allPrepTemplates } from '../lib/prep.js'
 import { useStore } from '../store.jsx'
 
+const SYNC_LABELS = {
+  syncing: 'Syncing…',
+  synced: 'All synced',
+  offline: 'Offline. Changes are saved here and will sync when you’re back online.',
+  error: 'Couldn’t sync just now. Your changes are safe here; it will try again.',
+}
+
 export default function Settings({ onBack }) {
-  const { state, actions } = useStore()
+  const { state, actions, cloud } = useStore()
   const toast = useToast()
+  const [signingIn, setSigningIn] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState(null)
   const [editingPrep, setEditingPrep] = useState(null)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -41,6 +50,52 @@ export default function Settings({ onBack }) {
           <Icon name="back" />
         </button>
         <h1>Settings</h1>
+      </div>
+
+      <div className="section">
+        <p className="section-title">Account & devices</p>
+        <div className="card stack">
+          {!cloud.available ? (
+            <p className="small muted" style={{ margin: 0 }}>
+              Accounts aren’t switched on for this copy of the app yet, so everything stays on this device.
+            </p>
+          ) : cloud.user ? (
+            <>
+              <div className="row spread">
+                <span>
+                  Signed in as <b>{cloud.user.email}</b>
+                </span>
+              </div>
+              <p className="small muted" style={{ margin: 0 }}>
+                {SYNC_LABELS[cloud.status] || ''}
+                {cloud.status === 'synced' && cloud.lastSynced ? ` · ${new Date(cloud.lastSynced).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}
+              </p>
+              <div className="row">
+                <button className="btn" onClick={cloud.syncNow}>
+                  Sync now
+                </button>
+                <button
+                  className="btn ghost"
+                  onClick={async () => {
+                    await cloud.signOut()
+                    toast('Signed out. Your plan stays on this device.')
+                  }}
+                >
+                  Sign out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="small muted" style={{ margin: 0 }}>
+                Sign in to use your planner on your phone and iPad. Everything on this device comes along.
+              </p>
+              <button className="btn primary" onClick={() => setSigningIn(true)}>
+                Sign in or create an account
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="section">
@@ -206,6 +261,7 @@ export default function Settings({ onBack }) {
         <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files[0] && importData(e.target.files[0])} />
       </div>
 
+      {signingIn && <AccountSheet onClose={() => setSigningIn(false)} />}
       {editingTemplate && <TemplateEditor template={editingTemplate} onClose={() => setEditingTemplate(null)} />}
       {editingPrep && <PrepTemplateEditor template={editingPrep.new ? null : editingPrep} onClose={() => setEditingPrep(null)} />}
     </div>

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useCloudSync } from './cloud.js'
 import { addDays, todayKey } from './lib/dates.js'
 import { initialState, makeTask, makeTemplate, uid } from './lib/model.js'
 import { addPush, planSnapshot, rollPushes, sameSnapshot } from './lib/compost.js'
@@ -430,9 +431,11 @@ export function StoreProvider({ children }) {
     }
   }, [commit, update, today, celebrate])
 
+  const cloud = useCloudSync({ state, stateRef, commit, today })
+
   const value = useMemo(
-    () => ({ state, schedule, today, actions, celebrations }),
-    [state, schedule, today, actions, celebrations],
+    () => ({ state, schedule, today, actions, celebrations, cloud }),
+    [state, schedule, today, actions, celebrations, cloud],
   )
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

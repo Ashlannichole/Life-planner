@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AccountSheet from '../components/AccountSheet.jsx'
 import LibraryPicker from '../components/LibraryPicker.jsx'
 import Plant from '../components/Plant.jsx'
 import { todayKey } from '../lib/dates.js'
@@ -24,7 +25,8 @@ const SUGGESTIONS = [
 ]
 
 export default function Onboarding() {
-  const { state, actions } = useStore()
+  const { state, actions, cloud } = useStore()
+  const [signingIn, setSigningIn] = useState(false)
   const [step, setStep] = useState(0)
   const [free, setFree] = useState(() => new Set(['wkevening', 'weekend']))
   const [tasks, setTasks] = useState([])
@@ -64,6 +66,11 @@ export default function Onboarding() {
       <button className="btn primary big" onClick={() => setStep(1)}>
         Let’s set up (2 minutes)
       </button>
+      {cloud.available && (
+        <button className="btn ghost" onClick={() => setSigningIn(true)}>
+          Already using it on another device? Sign in
+        </button>
+      )}
     </>,
     <>
       <div className="grow stack">
@@ -181,6 +188,7 @@ export default function Onboarding() {
         </div>
       </div>
       {steps[step]}
+      {signingIn && <AccountSheet onClose={() => setSigningIn(false)} />}
     </div>
   )
 }
