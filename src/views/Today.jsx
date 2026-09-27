@@ -155,6 +155,16 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
         </button>
       )}
 
+      {day.workout && (
+        <div className="event-pill meal-pill">
+          <span style={{ fontSize: '1.2rem' }}>{day.workout.done ? '✅' : '🏋️'}</span>
+          <span>
+            <span className="small muted">Workout:</span> <b>{day.workout.title}</b>
+            <span className="small muted"> · {day.workout.done ? 'done, nice!' : `${day.workout.minutes} min, planned around`}</span>
+          </span>
+        </div>
+      )}
+
       {items.length > 0 ? (
         <>
           <button className="btn primary big" onClick={() => onFocus()}>

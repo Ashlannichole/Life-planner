@@ -106,7 +106,7 @@ const ID_LISTS = ['tasks', 'completions', 'events', 'recipes', 'templates', 'pre
 const MAPS = ['pins', 'deferrals', 'dayOrder', 'mealPlan', 'energy', 'milestones', 'settings']
 
 /** Fields kept per device and never synced. */
-export const LOCAL_ONLY = ['planSnapshot']
+export const LOCAL_ONLY = ['planSnapshot', 'workouts']
 
 export function syncable(state) {
   const out = { ...state }

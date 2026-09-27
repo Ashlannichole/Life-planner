@@ -121,6 +121,11 @@ export default function Week() {
                       {e.title}
                     </span>
                   ))}
+                  {planned?.workout && (
+                    <span className="week-chip meal">
+                      {planned.workout.done ? '✅' : '🏋️'} {planned.workout.title}
+                    </span>
+                  )}
                   {['lunch', 'dinner'].map((slot) => {
                     const recipe = state.recipes.find((r) => r.id === state.mealPlan[key]?.[slot])
                     return (

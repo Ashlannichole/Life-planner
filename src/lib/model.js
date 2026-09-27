@@ -164,6 +164,7 @@ export function initialState() {
       theme: 'sage',
     },
     energy: {},
+    workouts: {},
     milestones: {},
     unlockedThemes: ['sage'],
     planSnapshot: null,

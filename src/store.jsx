@@ -431,7 +431,16 @@ export function StoreProvider({ children }) {
     }
   }, [commit, update, today, celebrate])
 
-  const cloud = useCloudSync({ state, stateRef, commit, today })
+  // Finished workouts from the Rung app celebrate like any other check-off.
+  const celebrateWorkouts = useCallback(
+    (watered, reached) =>
+      celebrate([
+        ...watered.flatMap((w) => plantEvents(w.events, w.plant)),
+        ...reached.map((m) => ({ kind: 'milestone', milestone: m })),
+      ]),
+    [celebrate],
+  )
+  const cloud = useCloudSync({ state, stateRef, commit, today, celebrate: celebrateWorkouts })
 
   const value = useMemo(
     () => ({ state, schedule, today, actions, celebrations, cloud }),

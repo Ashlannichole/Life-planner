@@ -20,6 +20,7 @@ export default function Settings({ onBack }) {
   const { state, actions, cloud } = useStore()
   const toast = useToast()
   const [signingIn, setSigningIn] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState(null)
   const [editingPrep, setEditingPrep] = useState(null)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -84,6 +85,35 @@ export default function Settings({ onBack }) {
                   Sign out
                 </button>
               </div>
+              {confirmDelete ? (
+                <div className="stack" style={{ gap: 8 }}>
+                  <p className="small muted" style={{ margin: 0 }}>
+                    This permanently deletes your account and everything synced with it, in the planner and the Rung workout
+                    app. What’s on this device stays here.
+                  </p>
+                  <button
+                    className="btn danger"
+                    onClick={async () => {
+                      try {
+                        await cloud.deleteAccount()
+                        toast('Account deleted. Your plan stays on this device.')
+                      } catch (err) {
+                        toast(err?.message || 'Couldn’t delete the account just now')
+                      }
+                      setConfirmDelete(false)
+                    }}
+                  >
+                    Yes, delete my account
+                  </button>
+                  <button className="btn ghost" onClick={() => setConfirmDelete(false)}>
+                    Keep my account
+                  </button>
+                </div>
+              ) : (
+                <button className="btn ghost danger small" style={{ alignSelf: 'flex-start' }} onClick={() => setConfirmDelete(true)}>
+                  Delete account
+                </button>
+              )}
             </>
           ) : (
             <>
