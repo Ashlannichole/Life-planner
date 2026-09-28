@@ -32,6 +32,11 @@ variables, the app stays local-only.
   per-task summaries, which the recap, milestones, plant memories and repeating tasks all read, so nothing
   visible changes. A year of heavy use adds roughly 15–20 KB.
 - Syncing first asks only for the version number; the full plan is downloaded only when another device changed it.
+- `src/lib/workouts.js`: workouts from the **Rung** workout app (same account, `scheduled_workouts` table) show on
+  Today and in the week, their time counts against the day like cooking time, and a finished workout becomes a
+  check-off that waters the plant once.
+- Settings → Account & devices includes **Delete account** (App Store requirement); it removes the account's data
+  in both apps and leaves this device's copy in place.
 
 ## How it's built
 

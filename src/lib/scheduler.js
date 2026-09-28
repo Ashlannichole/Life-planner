@@ -9,6 +9,7 @@
 import { addDays, addMonths, diffDays, formatDay, formatMinutes, isWeekend, rangeKeys, timeToMinutes, weekday } from './dates.js'
 import { taskHistory } from './history.js'
 import { cookingMinutesByDay } from './meals.js'
+import { workoutMinutesByDay } from './workouts.js'
 import { PARTS, categoryById } from './model.js'
 
 export const HORIZON_DAYS = 14
@@ -335,6 +336,15 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     day.cats.cooking = (day.cats.cooking || 0) + 1
   }
 
+  // Workouts from the Rung app take their time too (finished ones are already check-offs).
+  const training = workoutMinutesByDay(state)
+  for (const day of days) {
+    const minutes = training[day.key] || 0
+    if (!minutes) continue
+    day.used += minutes
+    day.cats.selfcare = (day.cats.selfcare || 0) + 1
+  }
+
   // Work already done today uses up today's time.
   const doneToday = state.completions.filter((c) => c.date === today)
   const first = days[0]
@@ -452,6 +462,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
       freeMinutes: d.freeMinutes,
       used: d.used,
       cookingMinutes: cooking[d.key] || 0,
+      workout: state.workouts?.[d.key] || null,
       lowEnergy: state.energy?.[d.key] === 'low',
       planned: items.reduce((t, i) => t + i.minutes, 0),
       allDayBusy: d.allDayBusy,

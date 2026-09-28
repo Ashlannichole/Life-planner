@@ -2,6 +2,9 @@
 
 Until these steps are done, the app runs entirely on each device, exactly as before.
 
+The planner and the **Rung** workout app share one Supabase project, so one account (same email) works in both,
+and Rung's workouts show up in the planner. Do these steps once for the shared project.
+
 ## 1. Create a Supabase project
 
 1. Go to <https://supabase.com>, sign in, and create a new project (the free plan is fine).
@@ -11,9 +14,18 @@ Until these steps are done, the app runs entirely on each device, exactly as bef
 
 1. In the project, open **SQL Editor → New query**.
 2. Paste the contents of [`supabase/migrations/0001_planner_state.sql`](../supabase/migrations/0001_planner_state.sql) and click **Run**.
+3. New query again: paste [`supabase/migrations/0002_workouts_and_accounts.sql`](../supabase/migrations/0002_workouts_and_accounts.sql)
+   and click **Run**. (Rung's repo has the same file; running it twice is harmless.)
 
-This creates one `planner_state` row per account. Row-level security means each account can only ever read or
-change its own row.
+This creates:
+
+- `planner_state`: one row per account for the planner.
+- `workout_state`: one row per account for Rung.
+- `scheduled_workouts`: Rung's upcoming workouts, which the planner reads.
+- `delete_my_account()`: lets someone delete their account from inside either app (an App Store requirement);
+  it removes everything above for that account.
+
+Row-level security means each account can only ever read or change its own rows.
 
 ## 3. Send a 6-digit code instead of a link
 
@@ -40,6 +52,7 @@ Sign-in uses a code (links don't open inside a home-screen app on iPhone/iPad).
    - `VITE_SUPABASE_URL` = the Project URL
    - `VITE_SUPABASE_ANON_KEY` = the anon public key
 3. Redeploy (Deployments → the latest one → **Redeploy**). Variables only apply to new builds.
+4. Do the same for the **Rung** project in Vercel, with the **same two values**.
 
 The anon key is designed to be public; the row-level security from step 2 is what keeps data private.
 
