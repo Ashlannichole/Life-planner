@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { formatShortDate, todayKey } from '../lib/dates.js'
-import { allPrepTemplates, prepDates } from '../lib/prep.js'
+import { uid } from '../lib/model.js'
+import { allPrepTemplates, fitDaysBefore, prepDates, templateWithItems } from '../lib/prep.js'
 import { useStore } from '../store.jsx'
+import PrepAdder from './PrepAdder.jsx'
 import { Sheet, Toggle, useToast } from './ui.jsx'
 
 export default function EventEditor({ event, onClose }) {
@@ -21,6 +23,8 @@ export default function EventEditor({ event, onClose }) {
   )
   const [multiDay, setMultiDay] = useState(!!event?.endDate)
   const [picked, setPicked] = useState(() => new Set())
+  // Prep added on top of the template's own items; `remember` also saves it into the template.
+  const [extras, setExtras] = useState([])
   const set = (fields) => setDraft((d) => ({ ...d, ...fields }))
   const templates = allPrepTemplates(state)
   const template = templates.find((t) => t.id === draft.prepTemplateId)
@@ -29,6 +33,7 @@ export default function EventEditor({ event, onClose }) {
     const tpl = templates.find((t) => t.id === id)
     set({ prepTemplateId: id, title: draft.title || tpl?.name || '' })
     setPicked(new Set(tpl ? tpl.items.map((i) => i.id) : []))
+    setExtras([])
     if (tpl?.id === 'trip') {
       setMultiDay(true)
       set({ prepTemplateId: id, allDay: true, title: draft.title || 'Trip' })
@@ -49,7 +54,10 @@ export default function EventEditor({ event, onClose }) {
       actions.updateEvent(event.id, clean)
       toast('Event updated — plan rebalanced')
     } else {
-      const items = template ? template.items.filter((i) => picked.has(i.id)) : []
+      const fit = (i) => ({ ...i, daysBefore: fitDaysBefore(todayKey(), clean.date, i.daysBefore) })
+      const items = template ? [...template.items.filter((i) => picked.has(i.id)), ...extras.map(fit)] : []
+      const remembered = extras.filter((i) => i.remember)
+      if (template && remembered.length) actions.savePrepTemplate(templateWithItems(template, remembered))
       actions.addEvent(clean, items, template?.packing || [])
       toast(items.length ? `Added with ${items.length} prep tasks` : 'Event added — plan rebalanced')
     }
@@ -129,6 +137,23 @@ export default function EventEditor({ event, onClose }) {
                 )
               })}
             </div>
+            {extras.length > 0 && (
+              <div className="menu">
+                {extras.map((item) => (
+                  <button type="button" key={item.id} onClick={() => setExtras((xs) => xs.filter((x) => x.id !== item.id))}>
+                    <span style={{ width: 22 }}>☑</span>
+                    <span style={{ flex: 1 }}>{item.title}</span>
+                    <span className="small muted">by {formatShortDate(prepDates(draft.date, fitDaysBefore(todayKey(), draft.date, item.daysBefore)).deadline)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <PrepAdder
+              isTrip={template.id === 'trip' || multiDay}
+              existingTitles={[...template.items, ...extras].map((i) => i.title)}
+              templateName={template.name}
+              onAdd={(items, remember) => setExtras((xs) => [...xs, ...items.map((i) => ({ ...i, id: uid(), remember }))])}
+            />
             {template.packing?.length > 0 && <p className="small muted">A packing list will be attached too.</p>}
           </div>
         )}
