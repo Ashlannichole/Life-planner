@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../store.jsx'
 import { Sheet, useToast } from './ui.jsx'
 
-/** Sign in or sign up with an emailed 6-digit code. No password to remember. */
+/** Sign in or sign up from an email: tap its link, or type its 6-digit code. No password to remember. */
 export default function AccountSheet({ onClose }) {
   const { cloud } = useStore()
   const toast = useToast()
@@ -11,6 +11,14 @@ export default function AccountSheet({ onClose }) {
   const [step, setStep] = useState('email')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  // Tapping the link in the email signs in (possibly in another tab); close once that happens.
+  useEffect(() => {
+    if (step === 'code' && cloud.user) {
+      toast('Signed in. Your plan will sync across devices.')
+      onClose()
+    }
+  }, [step, cloud.user, toast, onClose])
 
   const run = async (fn) => {
     setBusy(true)
@@ -54,7 +62,7 @@ export default function AccountSheet({ onClose }) {
           />
           {error && <p className="small" style={{ color: '#c0605a', margin: 0 }}>{error}</p>}
           <button className="btn primary big" type="submit" disabled={busy || !/.+@.+\..+/.test(email)}>
-            {busy ? 'Sending…' : 'Email me a code'}
+            {busy ? 'Sending…' : 'Email me a sign-in link'}
           </button>
           <p className="small muted" style={{ margin: 0 }}>
             Anything already on this device comes along to your account.
@@ -73,7 +81,8 @@ export default function AccountSheet({ onClose }) {
           }}
         >
           <p className="muted" style={{ margin: 0 }}>
-            We sent a 6-digit code to <b>{email}</b>. Type it here.
+            We sent an email to <b>{email}</b>. Tap the <b>sign-in link</b> in it on this device. If the email shows a
+            6-digit code instead, type it here.
           </p>
           <input
             className="input code-input"

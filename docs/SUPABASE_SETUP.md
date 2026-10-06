@@ -27,23 +27,27 @@ This creates:
 
 Row-level security means each account can only ever read or change its own rows.
 
-## 3. Send a 6-digit code instead of a link
+## 3. Tell Supabase where the apps live
 
-Sign-in uses a code (links don't open inside a home-screen app on iPhone/iPad).
+The sign-in email has a link that brings you back to the app already signed in.
 
-1. Open **Authentication → Emails → Templates → Magic Link**. Emailed codes use this template too.
-2. Replace the body with something like:
+1. Open **Authentication → URL Configuration**.
+2. Set **Site URL** to the planner's live address, e.g. `https://your-planner.vercel.app`.
+3. Under **Redirect URLs**, click **Add URL** and add both apps' live addresses with `/**` on the end, e.g.
+   `https://your-planner.vercel.app/**` and `https://your-rung.vercel.app/**`. Then **Save**.
 
-   ```html
-   <h2>Your sign-in code</h2>
-   <p>Enter this code in the app: <strong>{{ .Token }}</strong></p>
-   ```
+### Optional: send a 6-digit code as well
 
-3. Under **Authentication → Sign In / Providers → Email**, make sure Email is enabled.
+On iPhone and iPad, a link opens in Safari, not in an app saved to the home screen. A code can be typed anywhere,
+so it's nicer once you have it. Supabase only lets you edit the email once you add your own email sender:
 
-> Supabase's built-in email sender only allows a handful of emails per hour. That's fine for testing. Before
-> inviting other people, add your own SMTP provider under **Authentication → Emails → SMTP settings** (Resend,
-> Postmark, SendGrid and similar all work).
+1. Add an SMTP provider under **Authentication → Emails → SMTP settings** (Resend, Postmark, SendGrid and similar
+   all work; most need a domain you own). This is needed anyway before inviting other people: Supabase's built-in
+   sender only emails your own team, a few times an hour.
+2. Then under **Authentication → Emails → Templates**, open **Magic Link** and **Confirm signup**, switch the body
+   to **Source**, and add a line such as `<p>Or enter this code: <strong>{{ .Token }}</strong></p>`.
+
+Both apps accept either the link or the code, so nothing else changes.
 
 ## 4. Connect the app
 
