@@ -66,7 +66,7 @@ export default function Onboarding() {
       <button className="btn primary big" onClick={() => setStep(1)}>
         Let’s set up (2 minutes)
       </button>
-      {cloud.available && (
+      {cloud.available && !cloud.user && (
         <button className="btn ghost" onClick={() => setSigningIn(true)}>
           Already using it on another device? Sign in
         </button>
