@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import AccountSheet from '../components/AccountSheet.jsx'
+import AccountSheet, { NewPasswordSheet } from '../components/AccountSheet.jsx'
 import PrepTemplateEditor from '../components/PrepTemplateEditor.jsx'
 import TemplateEditor, { weeklyFreeMinutes } from '../components/TemplateEditor.jsx'
 import { Icon, Toggle, useToast } from '../components/ui.jsx'
@@ -20,6 +20,7 @@ export default function Settings({ onBack }) {
   const { state, actions, cloud } = useStore()
   const toast = useToast()
   const [signingIn, setSigningIn] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState(null)
   const [editingPrep, setEditingPrep] = useState(null)
@@ -74,6 +75,9 @@ export default function Settings({ onBack }) {
               <div className="row">
                 <button className="btn" onClick={cloud.syncNow}>
                   Sync now
+                </button>
+                <button className="btn ghost" onClick={() => setChangingPassword(true)}>
+                  Change password
                 </button>
                 <button
                   className="btn ghost"
@@ -292,6 +296,7 @@ export default function Settings({ onBack }) {
       </div>
 
       {signingIn && <AccountSheet onClose={() => setSigningIn(false)} />}
+      {changingPassword && <NewPasswordSheet title="Change password" onClose={() => setChangingPassword(false)} />}
       {editingTemplate && <TemplateEditor template={editingTemplate} onClose={() => setEditingTemplate(null)} />}
       {editingPrep && <PrepTemplateEditor template={editingPrep.new ? null : editingPrep} onClose={() => setEditingPrep(null)} />}
     </div>

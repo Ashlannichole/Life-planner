@@ -27,27 +27,26 @@ This creates:
 
 Row-level security means each account can only ever read or change its own rows.
 
-## 3. Tell Supabase where the apps live
+## 3. Accounts: email and password
 
-The sign-in email has a link that brings you back to the app already signed in.
+People create an account with an email and a password, and sign in the same way in both apps.
 
-1. Open **Authentication → URL Configuration**.
-2. Set **Site URL** to the planner's live address, e.g. `https://your-planner.vercel.app`.
-3. Under **Redirect URLs**, click **Add URL** and add both apps' live addresses with `/**` on the end, e.g.
-   `https://your-planner.vercel.app/**` and `https://your-rung.vercel.app/**`. Then **Save**.
+1. Under **Authentication → Sign In / Providers → Email**, make sure **Email** is on. Leave **Confirm email** on:
+   new accounts get a "Confirm your email" message, and tapping it finishes the account and signs them in.
+2. Open **Authentication → URL Configuration**. Set **Site URL** to the planner's live address, e.g.
+   `https://your-planner.vercel.app`, and under **Redirect URLs** add both apps' live addresses with `/**` on the
+   end, e.g. `https://your-planner.vercel.app/**` and `https://your-rung.vercel.app/**`. Then **Save**. The
+   "Confirm your email" and "Reset password" emails bring people back to these addresses.
 
-### Optional: send a 6-digit code as well
+Forgot your password? **Sign in → Forgot your password?** emails a reset link; opening it asks for a new password.
+Signed-in people can also change it under **Settings → Change password**. Accounts made earlier with an email link
+have no password yet: use "Forgot your password?" once to set one.
 
-On iPhone and iPad, a link opens in Safari, not in an app saved to the home screen. A code can be typed anywhere,
-so it's nicer once you have it. Supabase only lets you edit the email once you add your own email sender:
+### Before inviting other people: your own email sender
 
-1. Add an SMTP provider under **Authentication → Emails → SMTP settings** (Resend, Postmark, SendGrid and similar
-   all work; most need a domain you own). This is needed anyway before inviting other people: Supabase's built-in
-   sender only emails your own team, a few times an hour.
-2. Then under **Authentication → Emails → Templates**, open **Magic Link** and **Confirm signup**, switch the body
-   to **Source**, and add a line such as `<p>Or enter this code: <strong>{{ .Token }}</strong></p>`.
-
-Both apps accept either the link or the code, so nothing else changes.
+Supabase's built-in sender only emails your own team, a few times an hour, which is fine for testing. Before other
+people sign up, add an SMTP provider under **Authentication → Emails → SMTP settings** (Resend, Postmark, SendGrid
+and similar all work; most need a domain you own). That also unlocks editing the email templates.
 
 ## 4. Connect the app
 
