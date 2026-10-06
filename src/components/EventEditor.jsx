@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatShortDate, todayKey } from '../lib/dates.js'
+import { endAfterStart, formatShortDate, todayKey } from '../lib/dates.js'
 import { uid } from '../lib/model.js'
 import { allPrepTemplates, fitDaysBefore, prepDates, templateWithItems } from '../lib/prep.js'
 import { useStore } from '../store.jsx'
@@ -26,6 +26,17 @@ export default function EventEditor({ event, initialDate, onClose }) {
   // Prep added on top of the template's own items; `remember` also saves it into the template.
   const [extras, setExtras] = useState([])
   const set = (fields) => setDraft((d) => ({ ...d, ...fields }))
+
+  // Several days: the end starts as the day after the start (no paging through the
+  // calendar from today), and moving the start carries the end along.
+  const turnOnMultiDay = () => {
+    setMultiDay(true)
+    setDraft((d) => (d.endDate && d.endDate > d.date ? d : { ...d, endDate: endAfterStart(d.date, d.date, null) }))
+  }
+  const setStart = (date) => {
+    if (!date) return
+    setDraft((d) => ({ ...d, date, ...(multiDay ? { endDate: endAfterStart(date, d.date, d.endDate) } : {}) }))
+  }
   const templates = allPrepTemplates(state)
   const template = templates.find((t) => t.id === draft.prepTemplateId)
 
@@ -35,7 +46,7 @@ export default function EventEditor({ event, initialDate, onClose }) {
     setPicked(new Set(tpl ? tpl.items.map((i) => i.id) : []))
     setExtras([])
     if (tpl?.id === 'trip') {
-      setMultiDay(true)
+      turnOnMultiDay()
       set({ prepTemplateId: id, allDay: true, title: draft.title || 'Trip' })
     }
   }
@@ -86,11 +97,11 @@ export default function EventEditor({ event, initialDate, onClose }) {
         <input className="input" placeholder="Event name" value={draft.title} onChange={(e) => set({ title: e.target.value })} aria-label="Event name" autoFocus={!event} />
         <div className="field">
           <label htmlFor="ev-date">{multiDay ? 'Starts' : 'Date'}</label>
-          <input id="ev-date" className="input" type="date" value={draft.date} onChange={(e) => set({ date: e.target.value })} />
+          <input id="ev-date" className="input" type="date" value={draft.date} onChange={(e) => setStart(e.target.value)} />
         </div>
         <div className="row spread">
           <span>Several days</span>
-          <Toggle on={multiDay} onChange={setMultiDay} label="Several days" />
+          <Toggle on={multiDay} onChange={(on) => (on ? turnOnMultiDay() : setMultiDay(false))} label="Several days" />
         </div>
         {multiDay && (
           <div className="field">
