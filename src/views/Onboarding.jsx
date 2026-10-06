@@ -2,10 +2,12 @@ import { useState } from 'react'
 import AccountSheet from '../components/AccountSheet.jsx'
 import LibraryPicker from '../components/LibraryPicker.jsx'
 import Plant from '../components/Plant.jsx'
+import { Toggle } from '../components/ui.jsx'
 import { todayKey } from '../lib/dates.js'
 import { LIBRARY, tasksFromLibrary } from '../lib/library.js'
 import { APP_NAME, makeTask, makeTemplate } from '../lib/model.js'
 import { PLANT_TYPES } from '../lib/plant.js'
+import { PLUS_LABEL } from '../lib/plus.js'
 import { useStore } from '../store.jsx'
 
 const FREE_TIME = [
@@ -33,6 +35,8 @@ export default function Onboarding() {
   const [typed, setTyped] = useState('')
   const [chores, setChores] = useState(() => new Set())
   const [plantId, setPlantId] = useState(state.plant.current.typeId)
+  const [holidayPrep, setHolidayPrep] = useState(!!state.settings.holidayPrep)
+  const [seasonalTheme, setSeasonalTheme] = useState(!!state.settings.seasonalTheme)
 
   const finish = () => {
     const blocks = FREE_TIME.filter((f) => free.has(f.id)).flatMap((f) => f.blocks)
@@ -46,6 +50,7 @@ export default function Onboarding() {
     const picked = LIBRARY.filter((e) => chores.has(e.index))
     updates.tasks = [...state.tasks, ...tasks.map((t) => makeTask(t)), ...tasksFromLibrary(picked, todayKey())]
     updates.plant = { ...state.plant, current: { ...state.plant.current, typeId: plantId } }
+    updates.settings = { ...state.settings, holidayPrep, seasonalTheme }
     actions.finishOnboarding(updates)
   }
 
@@ -160,6 +165,23 @@ export default function Onboarding() {
               <div>{p.name}</div>
             </button>
           ))}
+        </div>
+        <div className="card stack" style={{ gap: 10 }}>
+          <p style={{ margin: 0 }}>
+            <b>Extras</b> <span className="plus-badge">{PLUS_LABEL}</span>
+          </p>
+          <div className="row spread">
+            <span className="small">
+              <b>Holiday prep.</b> Before Thanksgiving, Christmas and birthdays, answer one question and the prep gets planned.
+            </span>
+            <Toggle on={holidayPrep} onChange={setHolidayPrep} label="Holiday prep" />
+          </div>
+          <div className="row spread">
+            <span className="small">
+              <b>Seasonal themes.</b> Colors that change with the month, like pumpkin in October.
+            </span>
+            <Toggle on={seasonalTheme} onChange={setSeasonalTheme} label="Seasonal themes" />
+          </div>
         </div>
       </div>
       <button className="btn primary big" onClick={finish}>

@@ -7,7 +7,7 @@ import { hasTask, tasksFromLibrary } from './lib/library.js'
 import { findShoppingTask, groceryList, suggestMeals } from './lib/meals.js'
 import { applyMilestones } from './lib/milestones.js'
 import { unwater, water } from './lib/plant.js'
-import { makePrepTasks, reschedulePrepTasks } from './lib/prep.js'
+import { fitDaysBefore, makePrepTasks, reschedulePrepTasks } from './lib/prep.js'
 import { buildSchedule } from './lib/scheduler.js'
 import { playChime, playCheck } from './lib/sound.js'
 import { housekeep, loadState, migrate, saveState } from './lib/storage.js'
@@ -253,6 +253,40 @@ export function StoreProvider({ children }) {
       },
       setActiveTemplate(id) {
         update((s) => ({ ...s, activeTemplateId: id }))
+      },
+
+      // ---- holidays (Plus): answer the "what are your plans?" card
+      answerHoliday(holiday, answer) {
+        const today = todayKey()
+        const items = (answer.prep || []).map((i) => ({ ...i, daysBefore: fitDaysBefore(today, holiday.date, i.daysBefore) }))
+        update((s) => {
+          let events = s.events
+          // Hosting or going somewhere takes the day: it goes on the calendar as an all-day event.
+          const event = answer.event
+            ? { id: uid(), title: answer.event, date: holiday.date, endDate: null, allDay: true, start: '09:00', end: '17:00', prepTemplateId: null, packing: [], holidayKey: holiday.key }
+            : { id: null, date: holiday.date }
+          if (answer.event) events = [...events, event]
+          return {
+            ...s,
+            events,
+            tasks: [...s.tasks, ...makePrepTasks(event, items)],
+            holidayPlans: { ...s.holidayPlans, [holiday.key]: { answer: answer.id, at: today } },
+          }
+        })
+        return items.length
+      },
+      saveSpecialDay(b) {
+        update((s) => {
+          const list = s.specialDays || []
+          const exists = list.some((x) => x.id === b.id)
+          return { ...s, specialDays: exists ? list.map((x) => (x.id === b.id ? b : x)) : [...list, { ...b, id: b.id || uid() }] }
+        })
+      },
+      deleteSpecialDay(id) {
+        update((s) => ({ ...s, specialDays: (s.specialDays || []).filter((b) => b.id !== id) }))
+      },
+      snoozeHoliday(key, until) {
+        update((s) => ({ ...s, holidayPlans: { ...s.holidayPlans, [key]: { snoozeUntil: until } } }))
       },
 
       // ---- events

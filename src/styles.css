@@ -1372,3 +1372,37 @@ input.input::-webkit-date-and-time-value {
     font-size: 0.75rem;
   }
 }
+
+/* Holidays, birthdays and anniversaries: labels that don't take up time. */
+.month-mark {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.35;
+  padding: 0 3px;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.holiday-pill {
+  background: var(--accent-soft);
+}
+.holiday-card {
+  border: 1.5px solid var(--accent-soft);
+}
+.holiday-emoji {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+.plus-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f3c97b, #e8a0b4);
+  color: #3a2a1f;
+  vertical-align: middle;
+}

@@ -5,6 +5,8 @@ import Recap from './components/Recap.jsx'
 import { NewPasswordSheet } from './components/AccountSheet.jsx'
 import { Icon, ToastProvider } from './components/ui.jsx'
 import { THEMES } from './lib/milestones.js'
+import { hasPlus } from './lib/plus.js'
+import { SEASONAL_THEMES, seasonFor } from './lib/seasons.js'
 import { useStore } from './store.jsx'
 import Events from './views/Events.jsx'
 import Garden from './views/Garden.jsx'
@@ -26,7 +28,7 @@ const TABS = [
 ]
 
 // Accent colors for each theme, in light and dark mode.
-const THEME_CSS = THEMES.map(
+const THEME_CSS = [...THEMES, ...SEASONAL_THEMES].map(
   (t) => `
 [data-theme='${t.id}'] { --accent: ${t.light}; --need: ${t.light}; --accent-soft: ${t.softLight}; --need-soft: ${t.softLight}; }
 @media (prefers-color-scheme: dark) {
@@ -45,9 +47,10 @@ const readLocalOnly = () => {
 }
 
 export default function App() {
-  const { state, cloud } = useStore()
+  const { state, cloud, today } = useStore()
   const [localOnly, setLocalOnly] = useState(readLocalOnly)
-  const theme = state.settings.theme || 'sage'
+  // Plus: seasonal themes follow the month; otherwise the theme the person picked.
+  const theme = state.settings.seasonalTheme && hasPlus(state) ? seasonFor(today).id : state.settings.theme || 'sage'
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])

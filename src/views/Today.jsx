@@ -3,6 +3,7 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from '@dnd-kit/utilities'
 import { useState } from 'react'
 import CheckButton from '../components/CheckButton.jsx'
+import HolidayCard from '../components/HolidayCard.jsx'
 import ItemMenu from '../components/ItemMenu.jsx'
 import TaskEditor from '../components/TaskEditor.jsx'
 import Plant from '../components/Plant.jsx'
@@ -10,6 +11,9 @@ import { Icon, useToast } from '../components/ui.jsx'
 import { WEEKDAY_LONG, formatShortDate, formatTime, weekday } from '../lib/dates.js'
 import { categoryById, durationLabel } from '../lib/model.js'
 import { stageFor, stageProgress } from '../lib/plant.js'
+import { holidaysOn } from '../lib/holidays.js'
+import { hasPlus } from '../lib/plus.js'
+import { seasonFor } from '../lib/seasons.js'
 import { MEAL_SLOTS } from '../lib/meals.js'
 import { useStore } from '../store.jsx'
 
@@ -89,6 +93,8 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
   const doneToday = state.completions.filter((c) => c.date === today)
   const plant = state.plant.current
   const isSunday = weekday(today) === 0
+  // Today's holidays (if shown) birthdays and anniversaries (always): labels only, they don't take up time.
+  const todaysHolidays = holidaysOn(today, state.specialDays).filter((h) => h.specialId || state.settings.showHolidays !== false)
 
   // Pointer events cover mouse, pen and touch; the grip handle has touch-action: none, so a
   // finger on it drags straight away instead of scrolling the page.
@@ -136,6 +142,7 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
         <div>
           <p className="muted small" style={{ margin: 0 }}>
             {WEEKDAY_LONG[weekday(today)]}, {formatShortDate(today)}
+            {state.settings.seasonalTheme && hasPlus(state) ? ` ${seasonFor(today).emoji}` : ''}
           </p>
           <h1>{greeting()}</h1>
         </div>
@@ -153,6 +160,22 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
             <span className="muted small">See everything you did this week</span>
           </span>
         </button>
+      )}
+
+      <HolidayCard />
+
+      {todaysHolidays.length > 0 && (
+        <div className="stack" style={{ gap: 8 }}>
+          {todaysHolidays.map((h) => (
+            <div className="event-pill holiday-pill" key={h.key}>
+              <span style={{ fontSize: '1.2rem' }}>{h.emoji}</span>
+              <span style={{ fontWeight: 650 }}>
+                {h.name}
+                {h.detail ? <span className="small muted"> · {h.detail}</span> : null}
+              </span>
+            </div>
+          ))}
+        </div>
       )}
 
       {day.events.length > 0 && (

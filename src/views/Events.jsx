@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import EventEditor from '../components/EventEditor.jsx'
 import MonthCalendar from '../components/MonthCalendar.jsx'
+import SpecialDaysSheet from '../components/SpecialDaysSheet.jsx'
 import PackingList from '../components/PackingList.jsx'
 import PrepAdder from '../components/PrepAdder.jsx'
 import { Icon, Segmented, Sheet, useToast } from '../components/ui.jsx'
@@ -127,6 +128,7 @@ export default function Events() {
     }
   }
   const [editing, setEditing] = useState(null)
+  const [specialOpen, setSpecialOpen] = useState(false)
   const [openId, setOpenId] = useState(null)
   const [showPast, setShowPast] = useState(false)
 
@@ -180,6 +182,9 @@ export default function Events() {
       {view === 'month' ? (
         <MonthCalendar
           events={state.events}
+          specialDays={state.specialDays}
+          showHolidays={state.settings.showHolidays !== false}
+          onOpenSpecialDays={() => setSpecialOpen(true)}
           today={today}
           onOpenEvent={(e) => setOpenId(e.id)}
           onAddOnDay={(date) => setEditing({ new: true, date })}
@@ -193,6 +198,9 @@ export default function Events() {
             </div>
           )}
           <div className="task-list">{upcoming.map(row)}</div>
+          <button className="btn ghost" onClick={() => setSpecialOpen(true)}>
+            🎂 Birthdays & anniversaries
+          </button>
 
           {past.length > 0 && (
             <div className="section">
@@ -205,6 +213,7 @@ export default function Events() {
         </>
       )}
 
+      {specialOpen && <SpecialDaysSheet onClose={() => setSpecialOpen(false)} />}
       {editing && <EventEditor event={editing.new ? null : editing} initialDate={editing.date} onClose={() => setEditing(null)} />}
       {open && !editing && (
         <EventDetail
