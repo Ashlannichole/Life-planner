@@ -1,3 +1,4 @@
+import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { mergeState, syncable } from './lib/merge.js'
 import { initialState } from './lib/model.js'
@@ -10,14 +11,50 @@ const PUSH_DELAY = 1500
 const POLL_EVERY = 2 * 60 * 1000
 
 /**
+ * The sign-in saved on this device, read straight from storage so the app opens on the
+ * plan right away. Offline, Supabase can't refresh an expired sign-in (it retries for a
+ * while, then reports no session) but keeps it to refresh once back online; we stay signed
+ * in meanwhile, so being offline never locks someone out of their own plan.
+ */
+const offline = (err) => navigator.onLine === false || isAuthRetryableFetchError(err)
+
+function savedUser() {
+  if (!supabase) return null
+  try {
+    return JSON.parse(localStorage.getItem(supabase.auth.storageKey))?.user ?? null
+  } catch {
+    return null
+  }
+}
+
+const OWNER_KEY = 'sprout-planner:owner'
+
+function readOwner() {
+  try {
+    return localStorage.getItem(OWNER_KEY)
+  } catch {
+    return null
+  }
+}
+
+function writeOwner(userId) {
+  try {
+    if (userId) localStorage.setItem(OWNER_KEY, userId)
+    else localStorage.removeItem(OWNER_KEY)
+  } catch {
+    // Storage unavailable: nothing is kept on this device between launches anyway.
+  }
+}
+
+/**
  * Accounts and background sync. The planner keeps working from local storage;
  * when someone is signed in, changes are pushed shortly after they happen and
  * pulled whenever the app comes back to the foreground.
  */
 export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(savedUser)
   // False until we know whether someone is signed in, so the login screen doesn't flash up.
-  const [checked, setChecked] = useState(!supabase)
+  const [checked, setChecked] = useState(() => !supabase || user != null)
   const [status, setStatus] = useState(syncAvailable ? 'signed-out' : 'unavailable')
   const [lastSynced, setLastSynced] = useState(null)
   const [recovering, setRecovering] = useState(false)
@@ -31,9 +68,12 @@ export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
     if (!supabase) return
     supabase.auth
       .getSession()
-      .then(({ data }) => setUser(data.session?.user ?? null))
+      .then(({ data, error }) => setUser(data.session?.user ?? (offline(error) ? savedUser() : null)))
+      .catch((err) => setUser(offline(err) ? savedUser() : null))
       .finally(() => setChecked(true))
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      // The first answer comes from getSession above, which also handles being offline.
+      if (event === 'INITIAL_SESSION') return
       setUser(session?.user ?? null)
       // Arrived from a "reset your password" email: ask for the new password.
       if (event === 'PASSWORD_RECOVERY') setRecovering(true)
@@ -86,11 +126,29 @@ export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
     }
   }, [user, stateRef, commit, today, celebrate])
 
+  // Whose plan is on this device. Signing in to a different account than the one the plan
+  // belongs to (or one it never synced with) starts that account from its own plan, so
+  // nothing on this device is ever copied into someone else's account.
+  const claimDevice = useCallback(
+    (userId) => {
+      const owner = readOwner()
+      if (owner === userId) return
+      if (owner == null && metaRef.current?.userId === userId) return writeOwner(userId)
+      metaRef.current = null
+      saveSyncMeta(null)
+      setLastSynced(null)
+      commit(initialState())
+      writeOwner(userId)
+    },
+    [commit],
+  )
+
   useEffect(() => {
     if (!supabase) return
+    if (user) claimDevice(user.id)
     setStatus(user ? 'syncing' : 'signed-out')
     if (user) syncNow()
-  }, [user, syncNow])
+  }, [user, syncNow, claimDevice])
 
   // Push local changes shortly after they happen.
   useEffect(() => {
@@ -154,6 +212,7 @@ export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
 
   /** Forget the account on this device and clear the plan, so the next person to sign in can't see it. */
   const forgetDevice = useCallback(() => {
+    writeOwner(null)
     metaRef.current = null
     saveSyncMeta(null)
     setLastSynced(null)

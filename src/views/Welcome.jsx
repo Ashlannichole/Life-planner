@@ -22,7 +22,7 @@ export default function Welcome() {
         )}
       </div>
       <div className="stack welcome-form">
-        <AccountForm initialMode="signup" onModeChange={setMode} autoFocus={false} showCarryOver={false} />
+        <AccountForm initialMode="signup" onModeChange={setMode} autoFocus={false} />
       </div>
     </div>
   )
