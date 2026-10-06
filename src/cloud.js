@@ -1,3 +1,4 @@
+import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { mergeState, syncable } from './lib/merge.js'
 import { initialState } from './lib/model.js'
@@ -10,14 +11,31 @@ const PUSH_DELAY = 1500
 const POLL_EVERY = 2 * 60 * 1000
 
 /**
+ * The sign-in saved on this device, read straight from storage so the app opens on the
+ * plan right away. Offline, Supabase can't refresh an expired sign-in (it retries for a
+ * while, then reports no session) but keeps it to refresh once back online; we stay signed
+ * in meanwhile, so being offline never locks someone out of their own plan.
+ */
+const offline = (err) => navigator.onLine === false || isAuthRetryableFetchError(err)
+
+function savedUser() {
+  if (!supabase) return null
+  try {
+    return JSON.parse(localStorage.getItem(supabase.auth.storageKey))?.user ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Accounts and background sync. The planner keeps working from local storage;
  * when someone is signed in, changes are pushed shortly after they happen and
  * pulled whenever the app comes back to the foreground.
  */
 export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(savedUser)
   // False until we know whether someone is signed in, so the login screen doesn't flash up.
-  const [checked, setChecked] = useState(!supabase)
+  const [checked, setChecked] = useState(() => !supabase || user != null)
   const [status, setStatus] = useState(syncAvailable ? 'signed-out' : 'unavailable')
   const [lastSynced, setLastSynced] = useState(null)
   const [recovering, setRecovering] = useState(false)
@@ -31,9 +49,12 @@ export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
     if (!supabase) return
     supabase.auth
       .getSession()
-      .then(({ data }) => setUser(data.session?.user ?? null))
+      .then(({ data, error }) => setUser(data.session?.user ?? (offline(error) ? savedUser() : null)))
+      .catch((err) => setUser(offline(err) ? savedUser() : null))
       .finally(() => setChecked(true))
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      // The first answer comes from getSession above, which also handles being offline.
+      if (event === 'INITIAL_SESSION') return
       setUser(session?.user ?? null)
       // Arrived from a "reset your password" email: ask for the new password.
       if (event === 'PASSWORD_RECOVERY') setRecovering(true)
@@ -50,6 +71,13 @@ export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
     running.current = true
     setStatus('syncing')
     try {
+      // The plan on this device belongs to a different account (its sign-in ran out rather
+      // than signing out): start this account clean so the two never mix.
+      if (metaRef.current?.userId && metaRef.current.userId !== user.id) {
+        metaRef.current = null
+        saveSyncMeta(null)
+        commit(initialState())
+      }
       const sent = stateRef.current
       const { state: incoming, meta } = await syncOnce(remote.current, user.id, sent, metaRef.current)
       metaRef.current = meta
