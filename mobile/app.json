@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Sprout",
+    "slug": "sprout",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#f7f4ee",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f7f4ee",
+      "dark": {
+        "backgroundColor": "#1c1e1b"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.ashlan.sprout",
+      "supportsTablet": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.ashlan.sprout",
+      "adaptiveIcon": {
+        "backgroundColor": "#e5efe6",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "platforms": [
+      "ios",
+      "android"
+    ]
+  }
+}
