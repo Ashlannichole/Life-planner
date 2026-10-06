@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import EventEditor from '../components/EventEditor.jsx'
 import PackingList from '../components/PackingList.jsx'
-import { Icon, Sheet } from '../components/ui.jsx'
+import PrepAdder from '../components/PrepAdder.jsx'
+import { Icon, Sheet, useToast } from '../components/ui.jsx'
 import { diffDays, formatDay, formatShortDate, formatTime } from '../lib/dates.js'
+import { findPrepTemplate, fitDaysBefore, templateWithItems } from '../lib/prep.js'
 import { useStore } from '../store.jsx'
 
 function when(e, today) {
@@ -12,7 +14,9 @@ function when(e, today) {
 
 function EventDetail({ event, onClose, onEdit }) {
   const { state, schedule, today, actions } = useStore()
+  const toast = useToast()
   const [confirm, setConfirm] = useState(false)
+  const template = findPrepTemplate(state, event.prepTemplateId)
   const prep = state.tasks
     .filter((t) => t.eventId === event.id)
     .sort((a, b) => (a.deadline || '').localeCompare(b.deadline || ''))
@@ -46,6 +50,22 @@ function EventDetail({ event, onClose, onEdit }) {
               })}
             </div>
           </div>
+        )}
+
+        {(event.endDate || event.date) >= today && (
+          <PrepAdder
+            isTrip={event.prepTemplateId === 'trip' || !!event.endDate}
+            existingTitles={prep.map((t) => t.title)}
+            templateName={template?.name}
+            onAdd={(items, remember) => {
+              actions.addPrepTasks(
+                event,
+                items.map((i) => ({ ...i, daysBefore: fitDaysBefore(today, event.date, i.daysBefore) })),
+              )
+              if (remember && template) actions.savePrepTemplate(templateWithItems(template, items))
+              toast(items.length === 1 ? `Added “${items[0].title}”` : `Added ${items.length} prep tasks`)
+            }}
+          />
         )}
 
         {(event.packing?.length > 0 || event.prepTemplateId) && <PackingList event={event} />}

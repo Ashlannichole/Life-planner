@@ -20,7 +20,7 @@ Every push to the default branch then deploys, and every PR gets a preview URL. 
 
 ## Accounts and sync (optional)
 
-People can sign in with just their email (a 6-digit code, no password) to use the same planner on their phone
+People can sign in with just their email (a sign-in link or code, no password) to use the same planner on their phone
 and iPad. Setup steps are in [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md). Without the two `VITE_SUPABASE_*`
 variables, the app stays local-only.
 
