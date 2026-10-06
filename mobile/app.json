@@ -34,6 +34,22 @@
     "platforms": [
       "ios",
       "android"
+    ],
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#5d8c69"
+        }
+      ],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Sprout reads your sleep, heart rate variability, steps and calories (from Oura, Apple Watch or any app that shares with Apple Health) to plan lighter days when you need them.",
+          "NSHealthUpdateUsageDescription": false,
+          "background": false
+        }
+      ]
     ]
   }
 }

@@ -170,6 +170,7 @@ export function initialState() {
       birthdayAsked: false, // asked for the person's own birthday (answered or "not now")
     },
     holidayPlans: {}, // 'thanksgiving-2026' → { answer, at } or { snoozeUntil }
+    health: {}, // '2026-10-06' → { sleepMinutes, hrv, hrvBaseline, restingHr, activeKcal, eatenKcal, steps } from Apple Health (Plus)
     specialDays: [], // birthdays and anniversaries { id, kind, name, month, day, year?, self? }: yearly, never take up time
     energy: {},
     workouts: {},

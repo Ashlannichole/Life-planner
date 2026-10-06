@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import AccountSheet, { NewPasswordSheet } from '../components/AccountSheet.jsx'
 import PrepTemplateEditor from '../components/PrepTemplateEditor.jsx'
 import SpecialDaysSheet from '../components/SpecialDaysSheet.jsx'
+import PhoneSettings from '../components/PhoneSettings.jsx'
 import PlusSheet from '../components/PlusSheet.jsx'
 import { myBirthdayValue, parseBirthday } from '../components/BirthdayAsk.jsx'
 import TemplateEditor, { weeklyFreeMinutes } from '../components/TemplateEditor.jsx'
@@ -249,6 +250,8 @@ export default function Settings({ onBack }) {
           )}
         </div>
       </div>
+
+      <PhoneSettings />
 
       <div className="section">
         <p className="section-title">Holidays & special days</p>
