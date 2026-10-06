@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { mergeState, syncable } from './lib/merge.js'
+import { initialState } from './lib/model.js'
 import { housekeep, migrate } from './lib/storage.js'
 import { supabase, syncAvailable } from './lib/supabase.js'
 import { loadSyncMeta, saveSyncMeta, supabaseRemote, syncOnce } from './lib/sync.js'
@@ -15,6 +16,8 @@ const POLL_EVERY = 2 * 60 * 1000
  */
 export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
   const [user, setUser] = useState(null)
+  // False until we know whether someone is signed in, so the login screen doesn't flash up.
+  const [checked, setChecked] = useState(!supabase)
   const [status, setStatus] = useState(syncAvailable ? 'signed-out' : 'unavailable')
   const [lastSynced, setLastSynced] = useState(null)
   const [recovering, setRecovering] = useState(false)
@@ -26,7 +29,10 @@ export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
   // Track the signed-in account.
   useEffect(() => {
     if (!supabase) return
-    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
+    supabase.auth
+      .getSession()
+      .then(({ data }) => setUser(data.session?.user ?? null))
+      .finally(() => setChecked(true))
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
       // Arrived from a "reset your password" email: ask for the new password.
@@ -146,29 +152,35 @@ export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
     setRecovering(false)
   }, [])
 
-  /** Sign out of this device. The planner stays here; it just stops syncing. */
-  const signOut = useCallback(async () => {
-    await supabase.auth.signOut()
+  /** Forget the account on this device and clear the plan, so the next person to sign in can't see it. */
+  const forgetDevice = useCallback(() => {
     metaRef.current = null
     saveSyncMeta(null)
     setLastSynced(null)
-  }, [])
+    commit(initialState())
+  }, [commit])
+
+  /** Sign out of this device. The plan is saved in the account first, then cleared from here. */
+  const signOut = useCallback(async () => {
+    await syncNow()
+    await supabase.auth.signOut()
+    forgetDevice()
+  }, [syncNow, forgetDevice])
 
   /**
    * Permanently delete the account and everything synced with it, in the
-   * planner and the Rung app (App Store requirement). This device keeps its copy.
+   * planner and the Rung app (App Store requirement), and clear it from this device.
    */
   const deleteAccount = useCallback(async () => {
     const { error } = await supabase.rpc('delete_my_account')
     if (error) throw error
     await supabase.auth.signOut()
-    metaRef.current = null
-    saveSyncMeta(null)
-    setLastSynced(null)
-  }, [])
+    forgetDevice()
+  }, [forgetDevice])
 
   return {
     available: syncAvailable,
+    checked,
     user,
     status,
     lastSynced,

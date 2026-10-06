@@ -36,19 +36,8 @@ const THEME_CSS = [...THEMES, ...SEASONAL_THEMES].map(
 }`,
 ).join('\n')
 
-// Remembers "Use without an account" on this device so the welcome screen doesn't ask again.
-const LOCAL_ONLY_KEY = 'sprout.localOnly'
-const readLocalOnly = () => {
-  try {
-    return localStorage.getItem(LOCAL_ONLY_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
 export default function App() {
   const { state, cloud, today } = useStore()
-  const [localOnly, setLocalOnly] = useState(readLocalOnly)
   // Plus: seasonal themes follow the month; otherwise the theme the person picked.
   const theme = state.settings.seasonalTheme && hasPlus(state) ? seasonFor(today).id : state.settings.theme || 'sage'
   useEffect(() => {
@@ -61,25 +50,15 @@ export default function App() {
   // Arrived from a "reset your password" email: ask for the new password right away.
   const recovery = cloud.recovering && <NewPasswordSheet onClose={cloud.cancelRecovery} />
 
-  if (!state.onboarded) {
-    // Accounts on and nobody signed in: sign in / sign up first (or choose to stay on this device).
-    // Signed in: wait for the first sync, so a returning account skips setup and lands on its own plan.
-    const firstSyncDone = cloud.lastSynced != null || cloud.status === 'error' || cloud.status === 'offline'
+  // Accounts on: nothing but the login screen until someone is signed in. Signed in but
+  // not set up yet: wait for the first sync, so a returning account lands on its own plan.
+  const signedOut = cloud.available && !cloud.user
+  const firstSyncDone = cloud.lastSynced != null || cloud.status === 'error' || cloud.status === 'offline'
+  if (!cloud.checked || signedOut || !state.onboarded) {
     let screen = <Onboarding />
-    if (cloud.available && !cloud.user && !localOnly) {
-      screen = (
-        <Welcome
-          onSkip={() => {
-            try {
-              localStorage.setItem(LOCAL_ONLY_KEY, '1')
-            } catch {
-              // Private browsing: it just asks again next time.
-            }
-            setLocalOnly(true)
-          }}
-        />
-      )
-    } else if (cloud.user && !firstSyncDone) {
+    if (!cloud.checked) screen = <div className="onboarding" />
+    else if (signedOut) screen = <Welcome />
+    else if (cloud.user && !firstSyncDone) {
       screen = (
         <div className="onboarding" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
           <p className="muted">Getting your plan…</p>

@@ -4,10 +4,9 @@ import Plant from '../components/Plant.jsx'
 import { APP_NAME } from '../lib/model.js'
 
 /**
- * First screen when accounts are switched on: create an account or sign in
- * (email and password), or carry on without one.
+ * The only screen anyone sees until they sign in or create an account (email and password).
  */
-export default function Welcome({ onSkip }) {
+export default function Welcome() {
   const [mode, setMode] = useState('signup')
   const checking = mode.startsWith('check')
 
@@ -24,11 +23,6 @@ export default function Welcome({ onSkip }) {
       </div>
       <div className="stack welcome-form">
         <AccountForm initialMode="signup" onModeChange={setMode} autoFocus={false} showCarryOver={false} />
-        {!checking && (
-          <button className="btn ghost" onClick={onSkip}>
-            Use without an account
-          </button>
-        )}
       </div>
     </div>
   )

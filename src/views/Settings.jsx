@@ -88,8 +88,10 @@ export default function Settings({ onBack }) {
                 <button
                   className="btn ghost"
                   onClick={async () => {
+                    // Signing out clears this device; changes that haven't reached the account would be lost.
+                    const unsaved = cloud.status === 'offline' || cloud.status === 'error'
+                    if (unsaved && !window.confirm('Your latest changes haven’t reached your account yet, and signing out clears them from this device. Sign out anyway?')) return
                     await cloud.signOut()
-                    toast('Signed out. Your plan stays on this device.')
                   }}
                 >
                   Sign out
@@ -99,18 +101,17 @@ export default function Settings({ onBack }) {
                 <div className="stack" style={{ gap: 8 }}>
                   <p className="small muted" style={{ margin: 0 }}>
                     This permanently deletes your account and everything synced with it, in the planner and the Rung workout
-                    app. What’s on this device stays here.
+                    app, and clears it from this device.
                   </p>
                   <button
                     className="btn danger"
                     onClick={async () => {
                       try {
                         await cloud.deleteAccount()
-                        toast('Account deleted. Your plan stays on this device.')
                       } catch (err) {
                         toast(err?.message || 'Couldn’t delete the account just now')
+                        setConfirmDelete(false)
                       }
-                      setConfirmDelete(false)
                     }}
                   >
                     Yes, delete my account
