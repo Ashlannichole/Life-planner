@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Celebration from './components/Celebration.jsx'
 import Focus from './components/Focus.jsx'
 import Recap from './components/Recap.jsx'
+import { NewPasswordSheet } from './components/AccountSheet.jsx'
 import { Icon, ToastProvider } from './components/ui.jsx'
 import { THEMES } from './lib/milestones.js'
 import { useStore } from './store.jsx'
@@ -54,6 +55,9 @@ export default function App() {
   const [focus, setFocus] = useState(null) // { key } when open
   const [recapOpen, setRecapOpen] = useState(false)
 
+  // Arrived from a "reset your password" email: ask for the new password right away.
+  const recovery = cloud.recovering && <NewPasswordSheet onClose={cloud.cancelRecovery} />
+
   if (!state.onboarded) {
     // Accounts on and nobody signed in: sign in / sign up first (or choose to stay on this device).
     // Signed in: wait for the first sync, so a returning account skips setup and lands on its own plan.
@@ -83,6 +87,7 @@ export default function App() {
       <ToastProvider>
         <style>{THEME_CSS}</style>
         {screen}
+        {recovery}
       </ToastProvider>
     )
   }
@@ -130,6 +135,7 @@ export default function App() {
       {focus && <Focus startKey={focus.key} onClose={() => setFocus(null)} />}
       {recapOpen && <Recap onClose={() => setRecapOpen(false)} />}
       <Celebration onGarden={() => go('garden')} />
+      {recovery}
     </ToastProvider>
   )
 }

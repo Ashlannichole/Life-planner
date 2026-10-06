@@ -1,142 +1,257 @@
 import { useEffect, useState } from 'react'
+import { authMessage, MIN_PASSWORD, passwordProblem } from '../lib/authMessages.js'
 import { useStore } from '../store.jsx'
 import { Sheet, useToast } from './ui.jsx'
 
+const TITLES = {
+  signin: 'Sign in',
+  signup: 'Create your account',
+  forgot: 'Reset your password',
+  'check-confirm': 'Confirm your email',
+  'check-reset': 'Check your email',
+}
+
 /** Settings' sign-in sheet: the account form in a bottom sheet. */
-export default function AccountSheet({ onClose }) {
-  const [waiting, setWaiting] = useState(false)
+export default function AccountSheet({ onClose, initialMode = 'signin' }) {
+  const [mode, setMode] = useState(initialMode)
   return (
-    <Sheet title={waiting ? 'Check your email' : 'Use on all your devices'} onClose={onClose}>
-      <AccountForm onDone={onClose} onWaiting={setWaiting} />
+    <Sheet title={TITLES[mode]} onClose={onClose}>
+      <AccountForm onDone={onClose} onModeChange={setMode} initialMode={initialMode} />
     </Sheet>
   )
 }
 
-const DEFAULT_INTRO = (
-  <p className="muted" style={{ margin: 0 }}>
-    Sign in with your email and your plan follows you to your phone and iPad. New here? The same step creates your
-    account. No password needed.
-  </p>
-)
+/** A password field with a show/hide toggle. */
+export function PasswordInput({ value, onChange, autoComplete, label = 'Password', placeholder }) {
+  const [shown, setShown] = useState(false)
+  return (
+    <div className="password-field">
+      <input
+        className="input"
+        type={shown ? 'text' : 'password'}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={label}
+      />
+      <button type="button" className="password-toggle" onClick={() => setShown((s) => !s)} aria-label={shown ? 'Hide password' : 'Show password'}>
+        {shown ? 'Hide' : 'Show'}
+      </button>
+    </div>
+  )
+}
 
 /**
- * Sign in or sign up from an email: tap its link, or type its 6-digit code. No password to remember.
+ * Sign in or create an account with an email and password, or reset a forgotten password.
  * Used in the Settings sheet and on the welcome screen.
+ *
+ * Modes: signin, signup, forgot, and two "check your email" screens (after signing up
+ * when the project confirms emails, and after asking for a reset link).
  */
-export function AccountForm({ onDone, onWaiting, intro = DEFAULT_INTRO, submitLabel = 'Email me a sign-in link', autoFocus = true, showCarryOver = true }) {
+export function AccountForm({ onDone, onModeChange, initialMode = 'signin', autoFocus = true, showCarryOver = true }) {
   const { cloud } = useStore()
   const toast = useToast()
+  const [mode, setModeState] = useState(initialMode)
   const [email, setEmail] = useState('')
-  const [code, setCode] = useState('')
-  const [step, setStep] = useState('email')
-  const [showCode, setShowCode] = useState(false)
+  const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
 
-  useEffect(() => onWaiting?.(step === 'code'), [step, onWaiting])
+  const setMode = (next) => {
+    setModeState(next)
+    setError('')
+    setNotice('')
+    onModeChange?.(next)
+  }
 
-  // Tapping the link in the email signs in (possibly in another tab); finish once that happens.
+  // Signed in (here, or by tapping "Confirm your email" in another tab): finish.
   useEffect(() => {
-    if (step === 'code' && cloud.user) {
+    if (cloud.user && mode !== 'check-reset') {
       toast('Signed in. Your plan will sync across devices.')
       onDone?.()
     }
-  }, [step, cloud.user, toast, onDone])
+  }, [cloud.user, mode, toast, onDone])
 
   const run = async (fn) => {
     setBusy(true)
     setError('')
+    setNotice('')
     try {
       await fn()
     } catch (err) {
-      setError(err?.message || 'Something went wrong. Try again in a moment.')
+      setError(authMessage(err))
     } finally {
       setBusy(false)
     }
   }
 
-  return (
-    <>
-      {step === 'email' ? (
-        <form
-          className="stack"
-          onSubmit={(e) => {
-            e.preventDefault()
-            run(async () => {
-              await cloud.sendCode(email.trim())
-              setStep('code')
-            })
-          }}
-        >
-          {intro}
-          <input
-            className="input"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            aria-label="Email"
-            autoFocus={autoFocus}
-          />
-          {error && <p className="small" style={{ color: '#c0605a', margin: 0 }}>{error}</p>}
-          <button className="btn primary big" type="submit" disabled={busy || !/.+@.+\..+/.test(email)}>
-            {busy ? 'Sending…' : submitLabel}
+  const emailOk = /.+@.+\..+/.test(email.trim())
+  const tooShort = mode === 'signup' && password.length > 0 ? passwordProblem(password) : null
+
+  const submit = (e) => {
+    e.preventDefault()
+    const addr = email.trim()
+    if (mode === 'signin') run(() => cloud.signIn(addr, password))
+    if (mode === 'signup') {
+      run(async () => {
+        const result = await cloud.signUp(addr, password)
+        if (result === 'confirm-email') setMode('check-confirm')
+        if (result === 'exists') {
+          setMode('signin')
+          setError('There’s already an account with this email. Sign in instead.')
+        }
+      })
+    }
+    if (mode === 'forgot') {
+      run(async () => {
+        await cloud.sendPasswordReset(addr)
+        setMode('check-reset')
+      })
+    }
+  }
+
+  if (mode === 'check-confirm' || mode === 'check-reset') {
+    return (
+      <div className="stack">
+        <p style={{ margin: 0 }}>
+          We sent an email to <b>{email}</b>. Open it on this device and tap the button in it.
+        </p>
+        <p className="small muted" style={{ margin: 0 }}>
+          {mode === 'check-confirm'
+            ? 'It says “Confirm your email”. That finishes your account and signs you in; this screen updates by itself.'
+            : 'It says “Reset password”. You’ll be signed in and asked to choose a new password.'}
+        </p>
+        {error && <p className="small form-error">{error}</p>}
+        {notice && <p className="small muted" style={{ margin: 0 }}>{notice}</p>}
+        {mode === 'check-confirm' && (
+          <button
+            type="button"
+            className="btn ghost small"
+            disabled={busy}
+            onClick={() =>
+              run(async () => {
+                await cloud.resendConfirmation(email.trim())
+                setNotice('Sent again. Check your spam folder too.')
+              })
+            }
+          >
+            Send the email again
           </button>
-          {showCarryOver && (
-            <p className="small muted" style={{ margin: 0 }}>
-              Anything already on this device comes along to your account.
-            </p>
-          )}
-        </form>
+        )}
+        <button type="button" className="btn ghost" onClick={() => setMode('signin')}>
+          Back to sign in
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form className="stack" onSubmit={submit}>
+      {mode === 'forgot' ? (
+        <p className="muted" style={{ margin: 0 }}>
+          Enter your account’s email and we’ll send a link to choose a new password.
+        </p>
       ) : (
-        <div className="stack">
-          <p style={{ margin: 0 }}>
-            Open the email we sent to <b>{email}</b> on this device and tap the button in it.
-          </p>
-          <p className="small muted" style={{ margin: 0 }}>
-            The first time it says <b>“Confirm your email”</b>; after that it says <b>“Log in”</b>. Either one signs you in, and
-            this screen updates by itself.
-          </p>
-          {showCode ? (
-            <form
-              className="stack"
-              onSubmit={(e) => {
-                e.preventDefault()
-                run(async () => {
-                  await cloud.verifyCode(email.trim(), code.trim())
-                  toast('Signed in. Your plan will sync across devices.')
-                  onDone?.()
-                })
-              }}
-            >
-              <input
-                className="input code-input"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                placeholder="123456"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                aria-label="Code"
-                autoFocus
-              />
-              {error && <p className="small" style={{ color: '#c0605a', margin: 0 }}>{error}</p>}
-              <button className="btn primary big" type="submit" disabled={busy || code.length < 6}>
-                {busy ? 'Checking…' : 'Sign in'}
-              </button>
-            </form>
-          ) : (
-            <button type="button" className="btn ghost small" onClick={() => setShowCode(true)}>
-              My email has a 6-digit code instead
-            </button>
-          )}
-          <button type="button" className="btn ghost" onClick={() => setStep('email')}>
-            Use a different email
+        <div className="segmented" role="tablist" aria-label="Sign in or create an account">
+          <button type="button" role="tab" aria-selected={mode === 'signin'} className={mode === 'signin' ? 'on' : ''} onClick={() => setMode('signin')}>
+            Sign in
+          </button>
+          <button type="button" role="tab" aria-selected={mode === 'signup'} className={mode === 'signup' ? 'on' : ''} onClick={() => setMode('signup')}>
+            Create account
           </button>
         </div>
       )}
-    </>
+      <input
+        className="input"
+        type="email"
+        inputMode="email"
+        autoComplete="email"
+        placeholder="you@example.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        aria-label="Email"
+        autoFocus={autoFocus}
+      />
+      {mode !== 'forgot' && (
+        <PasswordInput
+          value={password}
+          onChange={setPassword}
+          autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+          placeholder={mode === 'signup' ? `Password (${MIN_PASSWORD}+ characters)` : 'Password'}
+        />
+      )}
+      {tooShort && <p className="small muted" style={{ margin: 0 }}>{tooShort}</p>}
+      {error && <p className="small form-error">{error}</p>}
+      <button
+        className="btn primary big"
+        type="submit"
+        disabled={busy || !emailOk || (mode === 'signin' && !password) || (mode === 'signup' && !!passwordProblem(password))}
+      >
+        {busy ? 'One moment…' : mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Email me a reset link'}
+      </button>
+      {mode === 'signin' && (
+        <button type="button" className="btn ghost small" onClick={() => setMode('forgot')}>
+          Forgot your password?
+        </button>
+      )}
+      {mode === 'forgot' && (
+        <button type="button" className="btn ghost" onClick={() => setMode('signin')}>
+          Back to sign in
+        </button>
+      )}
+      {showCarryOver && mode !== 'forgot' && (
+        <p className="small muted" style={{ margin: 0 }}>
+          Anything already on this device comes along to your account.
+        </p>
+      )}
+    </form>
+  )
+}
+
+/**
+ * Choose a new password: after opening a "reset your password" email, or from Settings.
+ */
+export function NewPasswordSheet({ onClose, title = 'Choose a new password' }) {
+  const { cloud } = useStore()
+  const toast = useToast()
+  const [password, setPassword] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const problem = password ? passwordProblem(password) : null
+
+  return (
+    <Sheet title={title} onClose={onClose}>
+      <form
+        className="stack"
+        onSubmit={async (e) => {
+          e.preventDefault()
+          setBusy(true)
+          setError('')
+          try {
+            await cloud.setPassword(password)
+            toast('Password saved')
+            onClose()
+          } catch (err) {
+            setError(authMessage(err))
+          } finally {
+            setBusy(false)
+          }
+        }}
+      >
+        {cloud.user?.email && (
+          <p className="muted" style={{ margin: 0 }}>
+            For <b>{cloud.user.email}</b>
+          </p>
+        )}
+        <PasswordInput value={password} onChange={setPassword} autoComplete="new-password" label="New password" placeholder={`New password (${MIN_PASSWORD}+ characters)`} />
+        {problem && <p className="small muted" style={{ margin: 0 }}>{problem}</p>}
+        {error && <p className="small form-error">{error}</p>}
+        <button className="btn primary big" type="submit" disabled={busy || !!passwordProblem(password)}>
+          {busy ? 'Saving…' : 'Save password'}
+        </button>
+      </form>
+    </Sheet>
   )
 }

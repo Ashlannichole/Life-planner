@@ -1,4 +1,4 @@
-import { DndContext, KeyboardSensor, PointerSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useState } from 'react'
@@ -31,27 +31,51 @@ export function ItemMeta({ item }) {
   )
 }
 
-function SortableItem({ item, onCheck, onOpen, leaving }) {
+function TaskCard({ item, onCheck, onOpen, className = '', handleRef, handleProps }) {
+  return (
+    <div className={`task-item ${item.type} ${className}`}>
+      <CheckButton checked={false} onCheck={onCheck} label={`Done: ${item.title}`} />
+      <button className="body" onClick={onOpen}>
+        <div className="title">{item.title}</div>
+        <ItemMeta item={item} />
+      </button>
+      <span ref={handleRef} className="drag-handle" {...handleProps} aria-label="Reorder">
+        <Icon name="grip" width="20" height="20" />
+      </span>
+    </div>
+  )
+}
+
+/**
+ * One row of today's list. The sortable transform goes on this wrapper, not on
+ * the card, so the card's own enter/leave transition never fights the drag.
+ * The part-of-day label lives inside it so it travels with its task.
+ */
+function SortableItem({ item, label, onCheck, onOpen, leaving }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: item.key,
   })
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`task-item ${item.type} ${isDragging ? 'dragging' : ''} ${leaving ? 'leaving' : ''}`}
+      className={`sortable-row ${isDragging ? 'placeholder' : ''}`}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
     >
-      <CheckButton checked={false} onCheck={onCheck} label={`Done: ${item.title}`} />
-      <button className="body" onClick={onOpen}>
-        <div className="title">{item.title}</div>
-        <ItemMeta item={item} />
-      </button>
-      <span ref={setActivatorNodeRef} className="drag-handle" {...attributes} {...listeners} aria-label="Reorder">
-        <Icon name="grip" width="20" height="20" />
-      </span>
+      {label && <div className="part-label">{label}</div>}
+      <TaskCard
+        item={item}
+        onCheck={onCheck}
+        onOpen={onOpen}
+        className={leaving ? 'leaving' : ''}
+        handleRef={setActivatorNodeRef}
+        handleProps={{ ...attributes, ...listeners }}
+      />
     </div>
   )
 }
+
+// Today's list only ever reorders up and down.
+const verticalOnly = ({ transform }) => ({ ...transform, x: 0 })
 
 export default function Today({ onFocus, onNavigate, onRecap }) {
   const { state, schedule, today, actions } = useStore()
@@ -64,11 +88,13 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
   const plant = state.plant.current
   const isSunday = weekday(today) === 0
 
+  // Pointer events cover mouse, pen and touch; the grip handle has touch-action: none, so a
+  // finger on it drags straight away instead of scrolling the page.
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
+  const [dragging, setDragging] = useState(null)
 
   const check = (item) => {
     // Let the check animation play before the item leaves the list.
@@ -84,6 +110,7 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
   }
 
   const onDragEnd = ({ active, over }) => {
+    setDragging(null)
     if (!over || active.id === over.id) return
     const keys = items.map((i) => i.key)
     actions.setDayOrder(today, arrayMove(keys, keys.indexOf(active.id), keys.indexOf(over.id)))
@@ -174,26 +201,33 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
             {items.length} {items.length === 1 ? 'thing' : 'things'} for today, in a suggested order.
             {day.lowEnergy && ' 🌙 Lighter day.'}
           </p>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[verticalOnly]}
+            onDragStart={({ active }) => setDragging(items.find((i) => i.key === active.id) || null)}
+            onDragCancel={() => setDragging(null)}
+            onDragEnd={onDragEnd}
+          >
             <SortableContext items={items.map((i) => i.key)} strategy={verticalListSortingStrategy}>
               <div className="task-list">
                 {items.map((item) => {
                   const showPart = !state.dayOrder[today] && item.part !== lastPart
                   lastPart = item.part
                   return (
-                    <div key={item.key} className="stack" style={{ gap: 6 }}>
-                      {showPart && <div className="part-label">{item.part[0].toUpperCase() + item.part.slice(1)}</div>}
-                      <SortableItem
-                        item={item}
-                        leaving={leaving.has(item.key)}
-                        onCheck={() => check(item)}
-                        onOpen={() => setMenuItem(item)}
-                      />
-                    </div>
+                    <SortableItem
+                      key={item.key}
+                      item={item}
+                      label={showPart ? item.part[0].toUpperCase() + item.part.slice(1) : null}
+                      leaving={leaving.has(item.key)}
+                      onCheck={() => check(item)}
+                      onOpen={() => setMenuItem(item)}
+                    />
                   )
                 })}
               </div>
             </SortableContext>
+            <DragOverlay>{dragging && <TaskCard item={dragging} className="lifted" />}</DragOverlay>
           </DndContext>
         </>
       ) : (
