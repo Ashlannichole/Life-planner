@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useState } from 'react'
 import CheckButton from '../components/CheckButton.jsx'
 import ItemMenu from '../components/ItemMenu.jsx'
+import TaskEditor from '../components/TaskEditor.jsx'
 import Plant from '../components/Plant.jsx'
 import { Icon, useToast } from '../components/ui.jsx'
 import { WEEKDAY_LONG, formatShortDate, formatTime, weekday } from '../lib/dates.js'
@@ -81,6 +82,7 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
   const { state, schedule, today, actions } = useStore()
   const toast = useToast()
   const [menuItem, setMenuItem] = useState(null)
+  const [adding, setAdding] = useState(false)
   const [leaving, setLeaving] = useState(() => new Set())
   const day = schedule.days[0]
   const items = day.items
@@ -242,6 +244,9 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
       )}
 
       <div className="row wrap" style={{ justifyContent: 'center', gap: 4 }}>
+        <button className="btn ghost" onClick={() => setAdding(true)}>
+          <Icon name="plus" width="18" height="18" /> Add something for today
+        </button>
         {items.length > 0 && (
           <button className="btn ghost" onClick={pullIn}>
             Extra time? Pull one in
@@ -284,6 +289,13 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
         {stageFor(plant.water).label} · {Math.round(stageProgress(plant.water) * 100)}% to the next stage
       </p>
 
+      {adding && (
+        <TaskEditor
+          initialDate={today}
+          onClose={() => setAdding(false)}
+          onSaved={(t) => toast(`“${t.title}” is on today’s list`)}
+        />
+      )}
       {menuItem && <ItemMenu item={menuItem} onClose={() => setMenuItem(null)} onFocus={onFocus} />}
     </div>
   )

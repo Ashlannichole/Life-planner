@@ -140,6 +140,12 @@ export function buildOccurrences(state, today, lastDay) {
     }
     if (!task.repeat || task.repeat === 'none') {
       if (task.doneAt) continue
+      if (task.onDate) {
+        // Set for a specific day by the user; if that day passed, it waits on today's list.
+        const day = task.onDate < today ? today : task.onDate
+        occs.push({ ...base, key: task.id, earliest: day, onDate: task.onDate, kind: 'onDay' })
+        continue
+      }
       let earliest = today
       if (task.notBefore && task.notBefore > earliest) earliest = task.notBefore
       occs.push({
@@ -375,6 +381,20 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     else unscheduled.push(occ)
   }
 
+  // 1b. Tasks the user set for a specific day go on that day, however full it is.
+  for (const occ of take((o) => o.kind === 'onDay')) {
+    const day = byKey.get(occ.earliest)
+    if (!day) {
+      unscheduled.push(occ)
+      continue
+    }
+    const why =
+      occ.onDate < today
+        ? `You set this for ${formatDay(occ.onDate, today)}, so it’s still here`
+        : `You set this for ${day.key === today ? 'today' : formatDay(day.key, today)}`
+    place(day, occ, 'onDay', why)
+  }
+
   // 2. Tasks with deadlines, earliest deadline first.
   const deadlines = take((o) => o.kind === 'deadline').sort((a, b) => a.deadline.localeCompare(b.deadline))
   for (const occ of deadlines) {
@@ -407,7 +427,11 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
   )
   for (const occ of recurring) {
     const window = days.filter((d) => d.key >= occ.earliest && d.key <= occ.latest)
-    const day = bestDay(window, occ)
+    let day = bestDay(window, occ)
+    // A daily routine still happens on a day with no free time or a full plan (skin care on a
+    // Sunday, say) instead of disappearing. Only a fully booked day (an all-day event or a
+    // trip) skips it. Longer repeats keep waiting for a day with room.
+    if (!day && occ.repeat === 'daily') day = window.find((d) => !d.allDayBusy && !d.taskIds.has(occ.taskId)) || null
     if (day) {
       const word = repeatWord(occ, taskById.get(occ.taskId))
       const why =
@@ -418,7 +442,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
             : `Due for its ${word} repeat; this day had more room`
       place(day, occ, 'recurring', deferredNote(occ, why))
     }
-    // A repeat that doesn't fit is simply skipped; the next one will come around.
+    // A repeat with nowhere to go (a trip, say) is simply skipped; the next one will come around.
   }
 
   // 4. Guarantee a want-to task on each day that has room for one.

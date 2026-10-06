@@ -41,7 +41,11 @@ describe('starter library', () => {
     ])
     const state = { ...initialState(), templates: [template], activeTemplateId: template.id, tasks: tasksFromLibrary(LIBRARY, MON) }
     const sched = buildSchedule(state, { today: MON })
-    for (const day of sched.days) expect(day.planned).toBeLessThanOrEqual(day.capacity)
+    // Daily routines always go on their day (even a full one); everything else has to fit.
+    for (const day of sched.days) {
+      const flexible = day.items.filter((i) => i.repeat !== 'daily').reduce((sum, i) => sum + i.minutes, 0)
+      expect(flexible).toBeLessThanOrEqual(day.capacity)
+    }
     expect(sched.days[0].items.length).toBeGreaterThan(3)
   })
 

@@ -221,3 +221,41 @@ describe('why this day', () => {
     expect(why(sched, tasks[1].id)).toBe('Keeps cleaning spread out across the week')
   })
 })
+
+describe('daily routines and set-day tasks', () => {
+  const SUN = addDays(MON, 6)
+  const daysWith = (sched, taskId) => sched.days.filter((d) => d.items.some((i) => i.taskId === taskId)).map((d) => d.key)
+
+  it('puts a daily task on every day, even a day with no free time', () => {
+    // Free time on weekday evenings only, so Sunday has none.
+    const skin = task('Skin care', { repeat: 'daily', minutes: 15, category: 'selfcare' })
+    const s = stateWith({ tasks: [skin], blocks: [{ days: [1, 2, 3, 4, 5], start: '18:00', end: '21:00' }] })
+    const sched = buildSchedule(s, { today: MON, horizon: 7 })
+    expect(daysWith(sched, skin.id)).toHaveLength(7)
+    expect(daysWith(sched, skin.id)).toContain(SUN)
+  })
+
+  it('puts a daily task on a day that is already full', () => {
+    const skin = task('Skin care', { repeat: 'daily', minutes: 15 })
+    const big = task('Deep clean', { minutes: 140, deadline: MON })
+    const s = stateWith({ tasks: [big, skin] })
+    const sched = buildSchedule(s, { today: MON, horizon: 2 })
+    expect(daysWith(sched, skin.id)).toEqual([MON, addDays(MON, 1)])
+  })
+
+  it('places a task set for a specific day on that day, whatever the room', () => {
+    const wed = addDays(MON, 2)
+    const call = task('Call the vet', { onDate: wed, minutes: 15 })
+    const filler = Array.from({ length: 12 }, (_, i) => task(`Thing ${i}`, { minutes: 30 }))
+    const s = stateWith({ tasks: [...filler, call] })
+    const sched = buildSchedule(s, { today: MON, horizon: 7 })
+    expect(dayOf(sched, call.id)).toBe(wed)
+    expect(sched.days[2].items.find((i) => i.taskId === call.id).why).toMatch(/You set this for/)
+  })
+
+  it('carries a missed set-day task over to today', () => {
+    const call = task('Call the vet', { onDate: addDays(MON, -2) })
+    const sched = buildSchedule(stateWith({ tasks: [call] }), { today: MON, horizon: 3 })
+    expect(dayOf(sched, call.id)).toBe(MON)
+  })
+})
