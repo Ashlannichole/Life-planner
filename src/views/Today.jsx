@@ -207,9 +207,26 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
               </p>
             </div>
           </div>
-          <button className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={() => actions.setEnergy(today, null)}>
-            I’m up after all
-          </button>
+          <div className="chips">
+            <button
+              className="chip on"
+              onClick={() => {
+                actions.setEnergy(today, null)
+                toast('☀️ Up and about! Your full day is back')
+              }}
+            >
+              ☀️ I’m up! Show my full day
+            </button>
+            <button
+              className="chip"
+              onClick={() => {
+                actions.setEnergy(today, 'low')
+                toast('🌙 Up, but taking it easy')
+              }}
+            >
+              🌙 Up, but keep it light
+            </button>
+          </div>
         </div>
       )}
       <WelcomeBack items={items} onFocus={onFocus} />
@@ -333,6 +350,11 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
             Extra time? Pull one in
           </button>
         )}
+        {day.bedDay && (
+          <button className="btn ghost" onClick={() => actions.setEnergy(today, null)}>
+            🛏️ Bed day · undo
+          </button>
+        )}
         {day.lowEnergy ? (
           <button className="btn ghost" onClick={() => actions.setEnergy(today, null)}>
             🌙 Lighter day · undo
@@ -355,7 +377,7 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
             className="btn ghost"
             onClick={() => {
               actions.setEnergy(today, 'bed')
-              toast('🛏️ Bed day. Only things you can do lying down.')
+              toast('🛏️ Bed day', { label: 'Undo', onClick: () => actions.setEnergy(today, null) })
             }}
           >
             🛏️ Staying in bed today?
