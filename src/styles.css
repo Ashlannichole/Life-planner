@@ -1779,3 +1779,22 @@ body {
   background: var(--accent-soft);
   border-color: transparent;
 }
+
+.toast.has-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 6px 6px 18px;
+  animation-duration: 5s;
+}
+.toast-action {
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

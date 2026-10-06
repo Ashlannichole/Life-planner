@@ -110,18 +110,30 @@ const ToastContext = createContext(() => {})
 
 export function ToastProvider({ children }) {
   const [toast, setToast] = useState(null)
-  const show = useCallback((text) => setToast({ text, id: Date.now() }), [])
+  // toast(text) or toast(text, { label: 'Undo', onClick }) for a message with a button.
+  const show = useCallback((text, action = null) => setToast({ text, action, id: Date.now() }), [])
   useEffect(() => {
     if (!toast) return
-    const t = setTimeout(() => setToast(null), 2600)
+    const t = setTimeout(() => setToast(null), toast.action ? 5000 : 2600)
     return () => clearTimeout(t)
   }, [toast])
   return (
     <ToastContext.Provider value={show}>
       {children}
       {toast && (
-        <div className="toast" key={toast.id} role="status">
-          {toast.text}
+        <div className={`toast ${toast.action ? 'has-action' : ''}`} key={toast.id} role="status">
+          <span>{toast.text}</span>
+          {toast.action && (
+            <button
+              className="toast-action"
+              onClick={() => {
+                toast.action.onClick()
+                setToast(null)
+              }}
+            >
+              {toast.action.label}
+            </button>
+          )}
         </div>
       )}
     </ToastContext.Provider>
