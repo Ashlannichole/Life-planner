@@ -46,7 +46,7 @@
         "@kingstinct/react-native-healthkit",
         {
           "NSHealthShareUsageDescription": "Sprout reads your sleep, heart rate variability, steps and calories (from Oura, Apple Watch or any app that shares with Apple Health) to plan lighter days when you need them.",
-          "NSHealthUpdateUsageDescription": false,
+          "NSHealthUpdateUsageDescription": "Sprout doesn't save anything to Apple Health. It only reads your sleep, heart rate variability, steps and calories to plan lighter days when you need them.",
           "background": false
         }
       ]
