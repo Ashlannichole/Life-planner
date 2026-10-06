@@ -1206,3 +1206,11 @@ textarea.input {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- welcome (sign in / sign up) */
+
+.welcome .welcome-form {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
