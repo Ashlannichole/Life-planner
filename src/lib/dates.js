@@ -82,6 +82,15 @@ export function monthGrid(key) {
   return weeks
 }
 
+/**
+ * The end date for a multi-day event after its start moves: it keeps the same length,
+ * and a missing or out-of-order end becomes the day after the start.
+ */
+export function endAfterStart(newStart, oldStart, oldEnd) {
+  if (!oldEnd || !oldStart || oldEnd <= oldStart) return addDays(newStart, 1)
+  return addDays(newStart, diffDays(oldStart, oldEnd))
+}
+
 export function timeToMinutes(t) {
   const [h, m] = t.split(':').map(Number)
   return h * 60 + m
