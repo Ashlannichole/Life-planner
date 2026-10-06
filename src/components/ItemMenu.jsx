@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { formatDay } from '../lib/dates.js'
 import { useStore } from '../store.jsx'
+import { hasPlus } from '../lib/plus.js'
+import StepsSheet, { StepsList } from './StepsSheet.jsx'
 import TaskEditor from './TaskEditor.jsx'
 import { Sheet, useToast } from './ui.jsx'
 
@@ -12,6 +14,7 @@ export default function ItemMenu({ item, onClose, onFocus }) {
   const task = state.tasks.find((t) => t.id === item.taskId)
 
   if (mode === 'edit' && task) return <TaskEditor task={task} onClose={onClose} />
+  if (mode === 'steps' && task) return <StepsSheet task={task} onClose={onClose} />
 
   const days = schedule.days.map((d) => d.key)
 
@@ -22,6 +25,7 @@ export default function ItemMenu({ item, onClose, onFocus }) {
           <span aria-hidden="true">💡</span> <span>{item.why}</span>
         </p>
       )}
+      {mode === 'menu' && <StepsList task={task} />}
       {mode === 'menu' ? (
         <div className="menu">
           <button
@@ -64,6 +68,9 @@ export default function ItemMenu({ item, onClose, onFocus }) {
             >
               ☀ Do it today
             </button>
+          )}
+          {task && hasPlus(state) && (
+            <button onClick={() => setMode('steps')}>✂️ {task.steps?.length ? 'Change the tiny steps' : 'Make it smaller'}</button>
           )}
           {task && <button onClick={() => setMode('edit')}>✎ Edit task</button>}
         </div>

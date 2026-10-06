@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { addDays, formatDay, todayKey } from '../lib/dates.js'
 import { CATEGORIES, DURATIONS, PREFERRED_TIMES, REPEATS, durationLabel, guessFromTitle } from '../lib/model.js'
+import { hasPlus } from '../lib/plus.js'
+import { isBedFriendly } from '../lib/scheduler.js'
 import { useStore } from '../store.jsx'
-import { Chips, Segmented, Sheet } from './ui.jsx'
+import { Chips, Segmented, Sheet, Toggle } from './ui.jsx'
 
 const TYPES = [
   { id: 'need', label: 'Need to' },
@@ -11,7 +13,7 @@ const TYPES = [
 
 /** Add or edit a task. Only the title is required; everything else has a default. */
 export default function TaskEditor({ task, initialTitle = '', initialDate = null, onClose, onSaved }) {
-  const { actions } = useStore()
+  const { actions, state } = useStore()
   const [draft, setDraft] = useState(() => {
     if (task) return { ...task }
     const guess = guessFromTitle(initialTitle)
@@ -159,6 +161,16 @@ export default function TaskEditor({ task, initialTitle = '', initialDate = null
             }}
           />
         </div>
+        {hasPlus(state) && (
+          <div className="row spread">
+            <span>
+              🛏️ Can do from bed
+              <br />
+              <span className="small muted">Shows up on days you’re staying in bed.</span>
+            </span>
+            <Toggle on={isBedFriendly(draft)} onChange={(bedFriendly) => set({ bedFriendly })} label="Can do from bed" />
+          </div>
+        )}
         <button className="btn primary big" type="submit" disabled={!draft.title.trim()}>
           {task ? 'Save' : 'Add task'}
         </button>

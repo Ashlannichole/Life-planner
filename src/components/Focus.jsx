@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { categoryById, durationLabel } from '../lib/model.js'
 import { playChime } from '../lib/sound.js'
+import { hasPlus } from '../lib/plus.js'
 import { useStore } from '../store.jsx'
+import FocusBuddy from './FocusBuddy.jsx'
 import Plant from './Plant.jsx'
+import { StepsList } from './StepsSheet.jsx'
 import { Icon } from './ui.jsx'
 
 function Timer({ minutes, soundOn }) {
@@ -79,6 +82,8 @@ export default function Focus({ startKey, onClose }) {
 
   const current = items.find((i) => i.key === currentKey) || items[0]
   const plant = state.plant.current
+  const plus = hasPlus(state)
+  const buddy = plus && !!state.settings.focusBuddy
 
   const advance = (fn) => {
     setLeaving(true)
@@ -103,7 +108,16 @@ export default function Focus({ startKey, onClose }) {
         <button className="icon-btn" onClick={onClose} aria-label="Close focus mode">
           <Icon name="close" />
         </button>
-        <div style={{ position: 'relative' }}>
+        {plus && (
+          <button
+            className={`chip ${buddy ? 'on' : ''}`}
+            onClick={() => actions.updateSettings({ focusBuddy: !buddy })}
+            aria-pressed={buddy}
+          >
+            🌱 Do it with me
+          </button>
+        )}
+        <div style={{ position: 'relative', visibility: buddy ? 'hidden' : 'visible' }}>
           {dropping && <span className="drop" aria-hidden="true" />}
           <Plant typeId={plant.typeId} potId={plant.potId} water={plant.water} size={48} />
         </div>
@@ -112,6 +126,7 @@ export default function Focus({ startKey, onClose }) {
       {current ? (
         <>
           <div className="focus-stage">
+            {buddy && <FocusBuddy />}
             <div className={`focus-card ${leaving ? 'out' : ''}`} key={current.key}>
               <div className="stack" style={{ alignItems: 'center', gap: 14 }}>
                 <span className={`tag ${current.type === 'want' ? 'want' : ''}`}>
@@ -121,6 +136,7 @@ export default function Focus({ startKey, onClose }) {
                 <div className="focus-title">{current.title}</div>
                 <span className="muted">{durationLabel(current.minutes)}</span>
                 {current.why && <span className="small muted">💡 {current.why}</span>}
+                <StepsList task={state.tasks.find((t) => t.id === current.taskId)} big />
                 <Timer key={current.key} minutes={current.minutes} soundOn={state.settings.sound} />
               </div>
             </div>

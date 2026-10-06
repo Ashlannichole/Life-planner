@@ -8,6 +8,8 @@ import ItemMenu from '../components/ItemMenu.jsx'
 import TaskEditor from '../components/TaskEditor.jsx'
 import Plant from '../components/Plant.jsx'
 import BirthdayAsk from '../components/BirthdayAsk.jsx'
+import WelcomeBack from '../components/WelcomeBack.jsx'
+import BrainDumpSheet from '../components/BrainDumpSheet.jsx'
 import { Garland, Peekers, useDecor } from '../components/ThemeDecor.jsx'
 import { Icon, useToast } from '../components/ui.jsx'
 import { WEEKDAY_LONG, addDays, diffDays, formatShortDate, formatTime, weekday } from '../lib/dates.js'
@@ -17,6 +19,7 @@ import { holidaysBetween, holidaysOn } from '../lib/holidays.js'
 import { hasPlus } from '../lib/plus.js'
 import { isMyBirthday, themeFor } from '../lib/seasons.js'
 import { MEAL_SLOTS } from '../lib/meals.js'
+import { stepProgress } from '../lib/steps.js'
 import { useStore } from '../store.jsx'
 
 /** Plus holiday themes: "12 days until Halloween", or "Happy Halloween!" on the day. */
@@ -37,10 +40,17 @@ function greeting() {
 }
 
 export function ItemMeta({ item }) {
+  const { state } = useStore()
   const cat = categoryById(item.category)
+  const steps = stepProgress(state.tasks.find((t) => t.id === item.taskId))
   return (
     <span className="meta">
       <span>{durationLabel(item.minutes)}</span>
+      {steps && (
+        <span className="tag steps">
+          ✂️ {steps.done}/{steps.total}
+        </span>
+      )}
       {cat && <span>· {cat.icon} {cat.label}</span>}
       {item.type === 'want' && <span className="tag want">fun</span>}
       {item.eventId && <span className="tag event">prep</span>}
@@ -99,8 +109,10 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
   const toast = useToast()
   const [menuItem, setMenuItem] = useState(null)
   const [adding, setAdding] = useState(false)
+  const [dumping, setDumping] = useState(false)
   const [leaving, setLeaving] = useState(() => new Set())
   const day = schedule.days[0]
+  const plus = hasPlus(state)
   const items = day.items
   const doneToday = state.completions.filter((c) => c.date === today)
   const plant = state.plant.current
@@ -180,6 +192,27 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
       )}
 
       <Peekers theme={holidayTheme} />
+      {day.bedDay && (
+        <div className="card bed-card stack" style={{ gap: 8 }}>
+          <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+            <span className="holiday-emoji" aria-hidden="true">
+              🛏️
+            </span>
+            <div>
+              <b>Bed day. Rest is on the plan.</b>
+              <p className="small muted" style={{ margin: '2px 0 0' }}>
+                {items.length
+                  ? `Just ${items.length === 1 ? 'one thing' : `${items.length} things`} you can do lying down. Everything else waits, nothing goes overdue.`
+                  : 'Nothing else today. Everything waits for you, nothing goes overdue. 💤'}
+              </p>
+            </div>
+          </div>
+          <button className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={() => actions.setEnergy(today, null)}>
+            I’m up after all
+          </button>
+        </div>
+      )}
+      <WelcomeBack items={items} onFocus={onFocus} />
       <BirthdayAsk />
       <HolidayCard />
 
@@ -244,6 +277,7 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
           <p className="muted small" style={{ margin: '4px 0 0' }}>
             {items.length} {items.length === 1 ? 'thing' : 'things'} for today, in a suggested order.
             {day.lowEnergy && ' 🌙 Lighter day.'}
+            {day.bedDay && ' 🛏️ All doable from bed.'}
           </p>
           <DndContext
             sensors={sensors}
@@ -289,6 +323,11 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
         <button className="btn ghost" onClick={() => setAdding(true)}>
           <Icon name="plus" width="18" height="18" /> Add something for today
         </button>
+        {plus && (
+          <button className="btn ghost" onClick={() => setDumping(true)}>
+            🧠 Brain dump
+          </button>
+        )}
         {items.length > 0 && (
           <button className="btn ghost" onClick={pullIn}>
             Extra time? Pull one in
@@ -299,14 +338,27 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
             🌙 Lighter day · undo
           </button>
         ) : (
+          !day.bedDay && (
+            <button
+              className="btn ghost"
+              onClick={() => {
+                actions.setEnergy(today, 'low')
+                toast('Taking it easy — today is lighter now')
+              }}
+            >
+              Low energy? Lighten today
+            </button>
+          )
+        )}
+        {plus && !day.bedDay && !day.lowEnergy && (
           <button
             className="btn ghost"
             onClick={() => {
-              actions.setEnergy(today, 'low')
-              toast('Taking it easy — today is lighter now')
+              actions.setEnergy(today, 'bed')
+              toast('🛏️ Bed day. Only things you can do lying down.')
             }}
           >
-            Low energy? Lighten today
+            🛏️ Staying in bed today?
           </button>
         )}
       </div>
@@ -331,6 +383,7 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
         {stageFor(plant.water).label} · {Math.round(stageProgress(plant.water) * 100)}% to the next stage
       </p>
 
+      {dumping && <BrainDumpSheet onClose={() => setDumping(false)} />}
       {adding && (
         <TaskEditor
           initialDate={today}

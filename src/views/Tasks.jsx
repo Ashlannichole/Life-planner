@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import CompostSheet from '../components/CompostSheet.jsx'
 import LibraryPicker from '../components/LibraryPicker.jsx'
+import BrainDumpSheet from '../components/BrainDumpSheet.jsx'
 import TaskEditor from '../components/TaskEditor.jsx'
+import { hasPlus } from '../lib/plus.js'
 import { Icon, Sheet, useToast } from '../components/ui.jsx'
 import { LIBRARY, hasTask } from '../lib/library.js'
 import { formatDay } from '../lib/dates.js'
@@ -60,6 +62,7 @@ export default function Tasks() {
 
   // After adding, tell the user which day the app picked once the plan has updated.
   const [justAdded, setJustAdded] = useState(null)
+  const [dumping, setDumping] = useState(false)
   const announce = (task) => setJustAdded(task)
   useEffect(() => {
     if (!justAdded) return
@@ -118,16 +121,24 @@ export default function Tasks() {
           Add
         </button>
       </form>
-      <button
-        className="btn ghost small"
-        style={{ alignSelf: 'flex-start', minHeight: 32, padding: '4px 8px' }}
-        onClick={() => {
-          setEditing({ new: true, title })
-          setTitle('')
-        }}
-      >
-        <Icon name="plus" width="16" height="16" /> Add with details
-      </button>
+      <div className="row wrap" style={{ gap: 4 }}>
+        <button
+          className="btn ghost small"
+          style={{ minHeight: 32, padding: '4px 8px' }}
+          onClick={() => {
+            setEditing({ new: true, title })
+            setTitle('')
+          }}
+        >
+          <Icon name="plus" width="16" height="16" /> Add with details
+        </button>
+        {hasPlus(state) && (
+          <button className="btn ghost small" style={{ minHeight: 32, padding: '4px 8px' }} onClick={() => setDumping(true)}>
+            🧠 Dump it all at once
+          </button>
+        )}
+      </div>
+      {dumping && <BrainDumpSheet onClose={() => setDumping(false)} />}
       <button className="btn" onClick={() => setLibrary(new Set())}>
         📚 Browse common chores
       </button>

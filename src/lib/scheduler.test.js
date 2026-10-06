@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { addDays } from './dates.js'
 import { initialState, makeTask, makeTemplate } from './model.js'
-import { buildSchedule, dayAvailability } from './scheduler.js'
+import { buildSchedule, dayAvailability, isBedFriendly } from './scheduler.js'
 import { makePrepTasks, prepDates, reschedulePrepTasks } from './prep.js'
 
 // 2026-09-28 is a Monday.
@@ -257,5 +257,45 @@ describe('daily routines and set-day tasks', () => {
     const call = task('Call the vet', { onDate: addDays(MON, -2) })
     const sched = buildSchedule(stateWith({ tasks: [call] }), { today: MON, horizon: 3 })
     expect(dayOf(sched, call.id)).toBe(MON)
+  })
+})
+
+describe('days in bed (Plus)', () => {
+  it('only plans things you can do lying down, and the rest waits', () => {
+    const tasks = [
+      task('Call the dentist', { createdAt: 1 }),
+      task('Pay the phone bill', { createdAt: 2 }),
+      task('Vacuum the living room', { createdAt: 3 }),
+      task('Water the plants', { createdAt: 4 }),
+      task('Read a chapter', { type: 'want', createdAt: 5 }),
+    ]
+    const sched = buildSchedule(stateWith({ tasks, energy: { [MON]: 'bed' } }), { today: MON })
+    const today = sched.days[0]
+    expect(today.bedDay).toBe(true)
+    const titles = today.items.map((i) => i.title)
+    expect(titles).not.toContain('Vacuum the living room')
+    expect(titles).not.toContain('Water the plants')
+    expect(titles.some((t) => /dentist|bill|chapter/.test(t))).toBe(true)
+    // Nothing is dropped: the up-and-about things land on another day.
+    expect(dayOf(sched, tasks[2].id)).not.toBe(MON)
+    expect(dayOf(sched, tasks[2].id)).toBeTruthy()
+  })
+
+  it('lets the person decide what counts as bed-friendly', () => {
+    expect(isBedFriendly({ title: 'Vacuum' })).toBe(false)
+    expect(isBedFriendly({ title: 'Vacuum', bedFriendly: true })).toBe(true)
+    expect(isBedFriendly({ title: 'Call Mom', bedFriendly: false })).toBe(false)
+    expect(isBedFriendly({ title: 'Water the plants' })).toBe(false)
+    expect(isBedFriendly({ title: 'Take a shower' })).toBe(false)
+    expect(isBedFriendly({ title: 'Do cardio' })).toBe(false)
+    expect(isBedFriendly({ title: 'Plan the week' })).toBe(true)
+  })
+
+  it('skips daily chores that need you up, but not ones you can do in bed', () => {
+    const tasks = [task('Make bed', { repeat: 'daily', minutes: 5 }), task('Journal', { repeat: 'daily', minutes: 10 })]
+    const today = buildSchedule(stateWith({ tasks, energy: { [MON]: 'bed' } }), { today: MON }).days[0]
+    const titles = today.items.map((i) => i.title)
+    expect(titles).toContain('Journal')
+    expect(titles).not.toContain('Make bed')
   })
 })

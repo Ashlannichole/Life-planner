@@ -9,6 +9,7 @@ import { applyMilestones } from './lib/milestones.js'
 import { unwater, water } from './lib/plant.js'
 import { fitDaysBefore, makePrepTasks, reschedulePrepTasks } from './lib/prep.js'
 import { buildSchedule } from './lib/scheduler.js'
+import { markOpened } from './lib/welcome.js'
 import { playChime, playCheck } from './lib/sound.js'
 import { housekeep, loadState, migrate, saveState } from './lib/storage.js'
 
@@ -128,7 +129,12 @@ export function StoreProvider({ children }) {
             plant,
             pins,
             completions: [...s.completions, completion],
-            tasks: s.tasks.map((t) => (t.id === occ.taskId && t.repeat === 'none' ? { ...t, doneAt: today } : t)),
+            tasks: s.tasks.map((t) => {
+              if (t.id !== occ.taskId) return t
+              // A repeating task's steps start fresh for next time.
+              const steps = t.steps?.length && t.repeat !== 'none' ? t.steps.map((st) => ({ ...st, done: false })) : t.steps
+              return t.repeat === 'none' ? { ...t, steps, doneAt: today } : { ...t, steps }
+            }),
           },
           today,
         )
@@ -181,6 +187,18 @@ export function StoreProvider({ children }) {
           ...s,
           tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, compost: false, pushes: 0 } : t)),
           pins: { ...s.pins, [taskId]: day },
+        }))
+      },
+      /** Plus: "Make it smaller". Save a task's tiny steps (an empty list removes them). */
+      setSteps(taskId, steps) {
+        update((s) => ({ ...s, tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, steps: steps.length ? steps : undefined } : t)) }))
+      },
+      toggleStep(taskId, stepId) {
+        update((s) => ({
+          ...s,
+          tasks: s.tasks.map((t) =>
+            t.id === taskId ? { ...t, steps: (t.steps || []).map((st) => (st.id === stepId ? { ...st, done: !st.done } : st)) } : t,
+          ),
         }))
       },
       compostRetry(taskId) {
@@ -455,6 +473,14 @@ export function StoreProvider({ children }) {
       },
 
       // ---- settings & data
+      /** Called once the plan is loaded (and synced, when signed in). */
+      markOpened() {
+        const next = markOpened(stateRef.current, today)
+        if (next) commit(next)
+      },
+      dismissWelcomeBack() {
+        update((s) => ({ ...s, settings: { ...s.settings, welcomeBack: null } }))
+      },
       updateSettings(fields) {
         update((s) => ({ ...s, settings: { ...s.settings, ...fields } }))
       },

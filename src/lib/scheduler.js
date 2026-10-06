@@ -16,6 +16,20 @@ export const HORIZON_DAYS = 14
 
 // A low-energy day keeps this share of its usual plan.
 export const LOW_ENERGY_FACTOR = 0.6
+// A day in bed (Plus) keeps even less, and only things that can be done lying down.
+export const BED_DAY_FACTOR = 0.5
+
+// Things you can do from bed: calls, texts, emails, paying and booking things online,
+// reading, small crafts, planning. Anything else waits for an up-and-about day.
+const BED_FRIENDLY =
+  /\b(call|phone|text|email|e-mail|message|reply|dm|pay|bills?|order|book|schedule|appointment|renew|cancel|subscriptions?|budget|insurance|forms?|tax(es)?|research|look up|google|online|plan|planning|lists?|read|reading|journal|write|sketch|draw|crochet|knit|meditate|meditation|podcast|audiobook|movie|skincare|face mask|nails|nap|wish ?list|cards?)\b/i
+
+/** Can this task be done from bed? The person's own choice wins over the guess from its title. */
+export function isBedFriendly(task) {
+  if (!task) return false
+  if (typeof task.bedFriendly === 'boolean') return task.bedFriendly
+  return BED_FRIENDLY.test(task.title || '')
+}
 
 // ---------------------------------------------------------------------------
 // Recurrence
@@ -204,6 +218,7 @@ function choosePart(day, occ) {
 
 function fits(day, occ) {
   if (day.taskIds.has(occ.taskId)) return false
+  if (day.bed && !occ.bedFriendly) return false
   if (day.capacity <= 0) return false
   if (occ.minutes <= day.capacity - day.used) return true
   // A long task can still go on an otherwise empty day with most of the room it needs.
@@ -328,9 +343,12 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
   // Low-energy days get a lighter plan. Set by the user today; later this can
   // come from a wearable's readiness score.
   for (const day of days) {
-    if (state.energy?.[day.key] !== 'low') continue
-    day.capacity = Math.floor(day.capacity * LOW_ENERGY_FACTOR)
-    for (const p of Object.keys(day.parts)) day.parts[p] = Math.floor(day.parts[p] * LOW_ENERGY_FACTOR)
+    const level = state.energy?.[day.key]
+    if (level !== 'low' && level !== 'bed') continue
+    const factor = level === 'bed' ? BED_DAY_FACTOR : LOW_ENERGY_FACTOR
+    day.bed = level === 'bed'
+    day.capacity = Math.floor(day.capacity * factor)
+    for (const p of Object.keys(day.parts)) day.parts[p] = Math.floor(day.parts[p] * factor)
   }
 
   // Planned meals take cooking time, so those days get less other work.
@@ -362,6 +380,8 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
   }
 
   let pool = buildOccurrences(state, today, lastDay)
+  const taskById = new Map(state.tasks.map((t) => [t.id, t]))
+  for (const occ of pool) occ.bedFriendly = isBedFriendly(taskById.get(occ.taskId))
   const unscheduled = []
   const take = (pred) => {
     const picked = pool.filter(pred)
@@ -369,7 +389,6 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     return picked
   }
 
-  const taskById = new Map(state.tasks.map((t) => [t.id, t]))
   const eventById = new Map(state.events.map((e) => [e.id, e]))
   const deferredNote = (occ, text) =>
     state.deferrals?.[occ.key] && occ.kind !== 'deadline' ? 'You said not today, so it waited for a day with room' : text
@@ -407,7 +426,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     let day = bestDay(window, occ)
     if (!day) {
       // Nothing fits before the deadline: squeeze it into the roomiest day rather than drop it.
-      const open = window.filter((d) => !d.taskIds.has(occ.taskId) && !d.allDayBusy)
+      const open = window.filter((d) => !d.taskIds.has(occ.taskId) && !d.allDayBusy && (!d.bed || occ.bedFriendly))
       day = (open.length ? open : window).reduce((a, b) => (b.capacity - b.used > a.capacity - a.used ? b : a))
     }
     const event = eventById.get(occ.eventId)
@@ -431,7 +450,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     // A daily routine still happens on a day with no free time or a full plan (skin care on a
     // Sunday, say) instead of disappearing. Only a fully booked day (an all-day event or a
     // trip) skips it. Longer repeats keep waiting for a day with room.
-    if (!day && occ.repeat === 'daily') day = window.find((d) => !d.allDayBusy && !d.taskIds.has(occ.taskId)) || null
+    if (!day && occ.repeat === 'daily') day = window.find((d) => !d.allDayBusy && !d.bed && !d.taskIds.has(occ.taskId)) || null
     if (day) {
       const word = repeatWord(occ, taskById.get(occ.taskId))
       const why =
@@ -488,6 +507,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
       cookingMinutes: cooking[d.key] || 0,
       workout: state.workouts?.[d.key] || null,
       lowEnergy: state.energy?.[d.key] === 'low',
+      bedDay: !!d.bed,
       planned: items.reduce((t, i) => t + i.minutes, 0),
       allDayBusy: d.allDayBusy,
       eventMinutes: d.eventMinutes,
