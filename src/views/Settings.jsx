@@ -129,7 +129,7 @@ export default function Settings({ onBack }) {
           ) : (
             <>
               <p className="small muted" style={{ margin: 0 }}>
-                Sign in to use your planner on your phone and iPad. Everything on this device comes along.
+                Sign in to use your planner on your phone and iPad.
               </p>
               <button className="btn primary" onClick={() => setSigningIn(true)}>
                 Sign in or create an account

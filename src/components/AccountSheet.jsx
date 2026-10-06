@@ -49,7 +49,7 @@ export function PasswordInput({ value, onChange, autoComplete, label = 'Password
  * Modes: signin, signup, forgot, and two "check your email" screens (after signing up
  * when the project confirms emails, and after asking for a reset link).
  */
-export function AccountForm({ onDone, onModeChange, initialMode = 'signin', autoFocus = true, showCarryOver = true }) {
+export function AccountForm({ onDone, onModeChange, initialMode = 'signin', autoFocus = true }) {
   const { cloud } = useStore()
   const toast = useToast()
   const [mode, setModeState] = useState(initialMode)
@@ -200,11 +200,6 @@ export function AccountForm({ onDone, onModeChange, initialMode = 'signin', auto
         <button type="button" className="btn ghost" onClick={() => setMode('signin')}>
           Back to sign in
         </button>
-      )}
-      {showCarryOver && mode !== 'forgot' && (
-        <p className="small muted" style={{ margin: 0 }}>
-          Anything already on this device comes along to your account.
-        </p>
       )}
     </form>
   )

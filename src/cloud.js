@@ -27,6 +27,25 @@ function savedUser() {
   }
 }
 
+const OWNER_KEY = 'sprout-planner:owner'
+
+function readOwner() {
+  try {
+    return localStorage.getItem(OWNER_KEY)
+  } catch {
+    return null
+  }
+}
+
+function writeOwner(userId) {
+  try {
+    if (userId) localStorage.setItem(OWNER_KEY, userId)
+    else localStorage.removeItem(OWNER_KEY)
+  } catch {
+    // Storage unavailable: nothing is kept on this device between launches anyway.
+  }
+}
+
 /**
  * Accounts and background sync. The planner keeps working from local storage;
  * when someone is signed in, changes are pushed shortly after they happen and
@@ -71,13 +90,6 @@ export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
     running.current = true
     setStatus('syncing')
     try {
-      // The plan on this device belongs to a different account (its sign-in ran out rather
-      // than signing out): start this account clean so the two never mix.
-      if (metaRef.current?.userId && metaRef.current.userId !== user.id) {
-        metaRef.current = null
-        saveSyncMeta(null)
-        commit(initialState())
-      }
       const sent = stateRef.current
       const { state: incoming, meta } = await syncOnce(remote.current, user.id, sent, metaRef.current)
       metaRef.current = meta
@@ -114,11 +126,29 @@ export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
     }
   }, [user, stateRef, commit, today, celebrate])
 
+  // Whose plan is on this device. Signing in to a different account than the one the plan
+  // belongs to (or one it never synced with) starts that account from its own plan, so
+  // nothing on this device is ever copied into someone else's account.
+  const claimDevice = useCallback(
+    (userId) => {
+      const owner = readOwner()
+      if (owner === userId) return
+      if (owner == null && metaRef.current?.userId === userId) return writeOwner(userId)
+      metaRef.current = null
+      saveSyncMeta(null)
+      setLastSynced(null)
+      commit(initialState())
+      writeOwner(userId)
+    },
+    [commit],
+  )
+
   useEffect(() => {
     if (!supabase) return
+    if (user) claimDevice(user.id)
     setStatus(user ? 'syncing' : 'signed-out')
     if (user) syncNow()
-  }, [user, syncNow])
+  }, [user, syncNow, claimDevice])
 
   // Push local changes shortly after they happen.
   useEffect(() => {
@@ -182,6 +212,7 @@ export function useCloudSync({ state, stateRef, commit, today, celebrate }) {
 
   /** Forget the account on this device and clear the plan, so the next person to sign in can't see it. */
   const forgetDevice = useCallback(() => {
+    writeOwner(null)
     metaRef.current = null
     saveSyncMeta(null)
     setLastSynced(null)
