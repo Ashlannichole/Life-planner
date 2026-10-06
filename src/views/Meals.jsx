@@ -4,6 +4,7 @@ import { Icon, Segmented, Sheet, useToast } from '../components/ui.jsx'
 import { formatDay } from '../lib/dates.js'
 import { MEAL_SLOTS, combineAmounts, findShoppingTask, groceryList, nutritionOn, planDays, plannedCalories } from '../lib/meals.js'
 import { durationLabel } from '../lib/model.js'
+import { hasPlus } from '../lib/plus.js'
 import { useStore } from '../store.jsx'
 
 const SECTIONS = [
@@ -85,6 +86,7 @@ function Plan({ onNewRecipe }) {
             {nutritionOn(state) && plannedCalories(state, day) != null && (
               <span className="small muted">~{plannedCalories(state, day).toLocaleString()} cal planned</span>
             )}
+            {day === today && <CaloriesToday />}
           </header>
           <div className="stack" style={{ gap: 6 }}>
             {MEAL_SLOTS.map((slot) => {
@@ -334,5 +336,21 @@ export default function Meals() {
         />
       )}
     </div>
+  )
+}
+
+/** Plus: today's calories from Apple Health (eaten and burned), against the target if set. */
+function CaloriesToday() {
+  const { state, today } = useStore()
+  const h = state.health?.[today]
+  if (!hasPlus(state) || !h || (h.eatenKcal == null && h.activeKcal == null)) return null
+  const target = state.settings.calorieTarget
+  const eaten = Math.round(h.eatenKcal || 0)
+  return (
+    <span className="small muted">
+      {h.eatenKcal != null && `🍽 ${eaten.toLocaleString()}${target ? ` of ${Number(target).toLocaleString()}` : ''} eaten`}
+      {h.eatenKcal != null && h.activeKcal != null && ' · '}
+      {h.activeKcal != null && `🔥 ${Math.round(h.activeKcal).toLocaleString()} burned`}
+    </span>
   )
 }

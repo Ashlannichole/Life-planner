@@ -35,6 +35,14 @@ When the build finishes (about 15–30 minutes), Apple processes it for another 
 
 For the next build, run the same command. The build number goes up on its own.
 
+## Reminders and Apple Health
+
+The app adds two phone-only features to the website:
+- **Reminders.** Turn them on in Sprout's Settings. The website works out what to remind you about and when; the app schedules them on the phone (`expo-notifications`).
+- **Apple Health (Plus).** Reads sleep, heart rate variability, resting heart rate, steps, and calories eaten and burned (`@kingstinct/react-native-healthkit`). An Oura ring shows up here once Apple Health sharing is turned on in the Oura app.
+
+These are native features, so after changing them you need a new build. Run the same TestFlight command again; it's all set up in `app.json`.
+
 ## Google Play later
 
 ```bash

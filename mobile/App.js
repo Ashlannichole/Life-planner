@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, BackHandler, Linking, Platform, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native'
+import { ActivityIndicator, AppState, BackHandler, Linking, Platform, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { WebView } from 'react-native-webview'
+import { connectHealth, enableNotifications, healthAvailable, notificationStatus, readHealth, scheduleReminders } from './native'
 
 // The live Sprout web app. The app's own CSS handles the notch and home bar on iOS.
 const SPROUT_URL = 'https://life-planner-dun-chi.vercel.app'
@@ -13,6 +14,13 @@ const COLORS = {
   light: { bg: '#f7f4ee', ink: '#37362f', accent: '#5d8c69', accentInk: '#ffffff' },
   dark: { bg: '#1c1e1b', ink: '#ebe8e0', accent: '#86b892', accentInk: '#172019' },
 }
+
+// Tells the web app which phone features it can use (reminders, Apple Health).
+const NATIVE_INFO = `window.SproutNative = ${JSON.stringify({
+  version: 1,
+  platform: Platform.OS,
+  features: ['notifications', ...(healthAvailable() ? ['health'] : [])],
+})}; true;`
 
 /** Stays inside Sprout; anything else (links in notes, Supabase pages) opens in the phone's browser. */
 function isSproutUrl(url) {
@@ -48,6 +56,53 @@ function Sprout() {
     return false
   }, [])
 
+  // Messages from the web app → phone features; answers go back as a 'sprout-native' event.
+  const reply = useCallback((message) => {
+    webview.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('sprout-native', { detail: ${JSON.stringify(message)} })); true;`)
+  }, [])
+
+  const onMessage = useCallback(
+    async (event) => {
+      let msg
+      try {
+        msg = JSON.parse(event.nativeEvent.data)
+      } catch {
+        return
+      }
+      try {
+        switch (msg.type) {
+          case 'notifications:status':
+            reply({ type: 'notifications:status', granted: await notificationStatus() })
+            break
+          case 'notifications:enable':
+            reply({ type: 'notifications:status', granted: await enableNotifications() })
+            break
+          case 'notifications:schedule':
+            reply({ type: 'notifications:scheduled', count: await scheduleReminders(msg.items || []) })
+            break
+          case 'health:connect':
+            await connectHealth()
+            reply({ type: 'health:data', data: await readHealth() })
+            break
+          case 'health:refresh':
+            reply({ type: 'health:data', data: await readHealth() })
+            break
+        }
+      } catch (err) {
+        reply({ type: 'error', about: msg.type, message: String(err?.message || err) })
+      }
+    },
+    [reply],
+  )
+
+  // Coming back to the app: ask the web app to refresh (new health numbers, fresh reminders).
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') reply({ type: 'foreground' })
+    })
+    return () => sub.remove()
+  }, [reply])
+
   const retry = () => {
     setFailed(false)
     webview.current?.reload()
@@ -82,6 +137,8 @@ function Sprout() {
         canGoBack.current = nav.canGoBack
       }}
       onShouldStartLoadWithRequest={onShouldStart}
+      injectedJavaScriptBeforeContentLoaded={NATIVE_INFO}
+      onMessage={onMessage}
       onError={() => setFailed(true)}
       // iOS can kill a backgrounded web view; bring it back instead of showing a blank screen.
       onContentProcessDidTerminate={() => webview.current?.reload()}

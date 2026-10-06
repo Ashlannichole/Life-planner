@@ -478,6 +478,16 @@ export function StoreProvider({ children }) {
         const next = markOpened(stateRef.current, today)
         if (next) commit(next)
       },
+      /** Plus: today's numbers from Apple Health (sleep, HRV, calories…). Keeps the last 30 days. */
+      setHealth(data) {
+        if (!data?.day) return
+        update((s) => {
+          const keep = Object.entries({ ...s.health, [data.day]: data })
+            .sort(([a], [b]) => b.localeCompare(a))
+            .slice(0, 30)
+          return { ...s, health: Object.fromEntries(keep) }
+        })
+      },
       dismissWelcomeBack() {
         update((s) => ({ ...s, settings: { ...s.settings, welcomeBack: null } }))
       },

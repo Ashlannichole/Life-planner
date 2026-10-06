@@ -21,6 +21,7 @@ export const FREE_FEATURES = [
   ['🌙', 'Low-energy days', 'One tap for a lighter day'],
   ['👋', 'Welcome back', 'Away a while? A fresh start, never a pile'],
   ['☁️', 'Sync', 'Phone, iPad and computer'],
+  ['🔔', 'Gentle reminders', 'A morning check-in, an evening nudge, a heads-up before events (iPhone app)'],
 ]
 
 export const PLUS_FEATURES = [
@@ -28,6 +29,7 @@ export const PLUS_FEATURES = [
   ['✂️', 'Make it smaller', 'Scary tasks become tiny steps you can tick off'],
   ['🌿', 'Do it with me', 'Your plant keeps you company in focus mode, with rain or brown noise'],
   ['🧠', 'Dump it all at once', 'Type everything on your mind; days and times are picked out for you'],
+  ['❤️', 'Apple Health', 'Oura or Apple Watch sleep suggests lighter days; calories in Meals'],
   ['🦃', 'Holiday prep', 'Answer one question; the prep gets planned'],
   ['🎃', 'Holiday themes', 'Twinkly lights, cute critters and a party on your birthday'],
 ]

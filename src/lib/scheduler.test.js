@@ -299,3 +299,30 @@ describe('days in bed (Plus)', () => {
     expect(titles).not.toContain('Make bed')
   })
 })
+
+describe('routines done more than once a day', () => {
+  const skincare = () => task('Skin care', { repeat: 'daily', minutes: 10, timesOfDay: ['morning', 'evening'] })
+
+  it('puts it on every day, once in the morning and once at night', () => {
+    const t = skincare()
+    const sched = buildSchedule(stateWith({ tasks: [t], blocks: [{ days: [0, 1, 2, 3, 4, 5, 6], start: '07:00', end: '22:00' }] }), { today: MON })
+    const today = sched.days[0].items.filter((i) => i.taskId === t.id)
+    expect(today.map((i) => i.part)).toEqual(['morning', 'evening'])
+    expect(sched.days[3].items.filter((i) => i.taskId === t.id)).toHaveLength(2)
+  })
+
+  it('checks off the morning one without touching the night one', () => {
+    const t = skincare()
+    const done = { id: 'c', taskId: t.id, occKey: `${t.id}:${MON}@morning`, date: MON, minutes: 10 }
+    const sched = buildSchedule(stateWith({ tasks: [t], completions: [done] }), { today: MON })
+    const today = sched.days[0].items.filter((i) => i.taskId === t.id)
+    expect(today.map((i) => i.part)).toEqual(['evening'])
+    expect(sched.days[1].items.filter((i) => i.taskId === t.id)).toHaveLength(2)
+  })
+
+  it('still shows up on a day with no free time', () => {
+    const t = skincare()
+    const sched = buildSchedule(stateWith({ tasks: [t], blocks: [] }), { today: MON })
+    expect(sched.days[0].items.filter((i) => i.taskId === t.id)).toHaveLength(2)
+  })
+})

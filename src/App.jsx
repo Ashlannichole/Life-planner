@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Celebration from './components/Celebration.jsx'
 import Focus from './components/Focus.jsx'
+import NativeBridge from './components/NativeBridge.jsx'
 import Recap from './components/Recap.jsx'
 import { DecorBits, useDecor } from './components/ThemeDecor.jsx'
 import { NewPasswordSheet } from './components/AccountSheet.jsx'
@@ -87,6 +88,7 @@ export default function App() {
     <ToastProvider>
       <style>{THEME_CSS}</style>
       <DecorBits theme={holidayTheme} />
+      <NativeBridge />
       <div className="app">
         {tab !== 'settings' && (
           <div className="topbar" style={{ marginBottom: 4, justifyContent: 'flex-end' }}>

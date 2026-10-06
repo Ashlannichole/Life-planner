@@ -171,6 +171,21 @@ export function buildOccurrences(state, today, lastDay) {
       })
       continue
     }
+    // A routine done more than once a day (skin care morning and night): one occurrence
+    // per time of day, each checked off on its own. Keyed by date so a morning check-off
+    // never moves the evening one.
+    if (task.repeat === 'daily' && task.timesOfDay?.length > 1) {
+      const done = new Set((byTask[task.id] || []).map((c) => c.occKey))
+      let day = task.startDate && task.startDate > today ? task.startDate : today
+      for (; day <= lastDay; day = addDays(day, 1)) {
+        for (const part of task.timesOfDay) {
+          const key = `${task.id}:${day}@${part}`
+          if (done.has(key)) continue
+          occs.push({ ...base, key, earliest: day, latest: day, due: day, kind: 'recurring', preferredTime: part, fixedPart: part, slot: `${task.id}@${part}` })
+        }
+      }
+      continue
+    }
     // Older check-offs live in the compacted history, so count those too.
     const { count, last: lastDone } = taskHistory(state, task.id, byTask[task.id] || [])
     let due = lastDone ? nextDue(task, lastDone) : task.startDate || today
@@ -217,7 +232,7 @@ function choosePart(day, occ) {
 }
 
 function fits(day, occ) {
-  if (day.taskIds.has(occ.taskId)) return false
+  if (day.taskIds.has(slotOf(occ))) return false
   if (day.bed && !occ.bedFriendly) return false
   if (day.capacity <= 0) return false
   if (occ.minutes <= day.capacity - day.used) return true
@@ -259,13 +274,17 @@ function pickBest(days, occ) {
   return best
 }
 
+// What counts as "already on this day": the task, or for a several-times-a-day routine,
+// that task at that time of day.
+const slotOf = (occ) => occ.slot || occ.taskId
+
 function place(day, occ, reason, why) {
-  const part = choosePart(day, occ)
+  const part = occ.fixedPart || choosePart(day, occ)
   day.items.push({ ...occ, day: day.key, part, reason, why })
   day.used += occ.minutes
   if (day.partUsed[part] !== undefined) day.partUsed[part] += occ.minutes
   if (occ.category) day.cats[occ.category] = (day.cats[occ.category] || 0) + 1
-  day.taskIds.add(occ.taskId)
+  day.taskIds.add(slotOf(occ))
   if (occ.type === 'want') day.hasWant = true
 }
 
@@ -374,7 +393,9 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
   const first = days[0]
   for (const c of doneToday) {
     first.used += c.minutes
-    first.taskIds.add(c.taskId)
+    // "abc:2026-10-06@morning" → the morning slot of a several-times-a-day routine.
+    const at = c.occKey?.includes('@') ? c.occKey.slice(c.occKey.lastIndexOf('@') + 1) : null
+    first.taskIds.add(at ? `${c.taskId}@${at}` : c.taskId)
     if (c.category) first.cats[c.category] = (first.cats[c.category] || 0) + 1
     if (c.type === 'want') first.hasWant = true
   }
@@ -426,7 +447,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     let day = bestDay(window, occ)
     if (!day) {
       // Nothing fits before the deadline: squeeze it into the roomiest day rather than drop it.
-      const open = window.filter((d) => !d.taskIds.has(occ.taskId) && !d.allDayBusy && (!d.bed || occ.bedFriendly))
+      const open = window.filter((d) => !d.taskIds.has(slotOf(occ)) && !d.allDayBusy && (!d.bed || occ.bedFriendly))
       day = (open.length ? open : window).reduce((a, b) => (b.capacity - b.used > a.capacity - a.used ? b : a))
     }
     const event = eventById.get(occ.eventId)
@@ -450,11 +471,12 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     // A daily routine still happens on a day with no free time or a full plan (skin care on a
     // Sunday, say) instead of disappearing. Only a fully booked day (an all-day event or a
     // trip) skips it. Longer repeats keep waiting for a day with room.
-    if (!day && occ.repeat === 'daily') day = window.find((d) => !d.allDayBusy && !d.bed && !d.taskIds.has(occ.taskId)) || null
+    if (!day && occ.repeat === 'daily') day = window.find((d) => !d.allDayBusy && !(d.bed && !occ.bedFriendly) && !d.taskIds.has(slotOf(occ))) || null
     if (day) {
       const word = repeatWord(occ, taskById.get(occ.taskId))
-      const why =
-        occ.repeat === 'daily'
+      const why = occ.fixedPart
+        ? `Your ${occ.fixedPart === 'evening' ? 'night' : occ.fixedPart} routine`
+        : occ.repeat === 'daily'
           ? 'Repeats every day'
           : day.key === occ.due
             ? `Due for its ${word} repeat`

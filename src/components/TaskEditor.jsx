@@ -6,6 +6,13 @@ import { isBedFriendly } from '../lib/scheduler.js'
 import { useStore } from '../store.jsx'
 import { Chips, Segmented, Sheet, Toggle } from './ui.jsx'
 
+// A daily routine can happen more than once a day (skin care morning and night).
+const TIMES_A_DAY = [
+  { id: 'once', label: 'Once', parts: null },
+  { id: 'twice', label: 'Morning & night', parts: ['morning', 'evening'] },
+  { id: 'three', label: 'Morning, afternoon & night', parts: ['morning', 'afternoon', 'evening'] },
+]
+
 const TYPES = [
   { id: 'need', label: 'Need to' },
   { id: 'want', label: 'Want to' },
@@ -34,6 +41,8 @@ export default function TaskEditor({ task, initialTitle = '', initialDate = null
   const [picking, setPicking] = useState(whenChoice === 'pick')
   const [touched, setTouched] = useState({ type: !!task, category: !!task })
   const set = (fields) => setDraft((d) => ({ ...d, ...fields }))
+  const timesChoice = draft.timesOfDay?.length === 3 ? 'three' : draft.timesOfDay?.length === 2 ? 'twice' : 'once'
+  const several = draft.repeat === 'daily' && timesChoice !== 'once'
 
   const onTitle = (title) => {
     // Keep guessing the category/type from the title until the user picks one.
@@ -49,8 +58,10 @@ export default function TaskEditor({ task, initialTitle = '', initialDate = null
     e?.preventDefault()
     const title = draft.title.trim()
     if (!title) return
-    if (task) actions.updateTask(task.id, { ...draft, title })
-    else onSaved?.(actions.addTask({ ...draft, title }))
+    // Several times a day only applies to daily routines.
+    const fields = { ...draft, title, timesOfDay: draft.repeat === 'daily' && draft.timesOfDay?.length > 1 ? draft.timesOfDay : null }
+    if (task) actions.updateTask(task.id, fields)
+    else onSaved?.(actions.addTask(fields))
     onClose()
   }
 
@@ -107,6 +118,19 @@ export default function TaskEditor({ task, initialTitle = '', initialDate = null
               <span>days</span>
             </div>
           )}
+          {draft.repeat === 'daily' && (
+            <>
+              <span className="label" style={{ marginTop: 6 }}>
+                How many times a day?
+              </span>
+              <Chips
+                options={TIMES_A_DAY}
+                value={timesChoice}
+                onChange={(id) => set({ timesOfDay: TIMES_A_DAY.find((o) => o.id === id).parts })}
+                className={draft.type === 'want' ? 'want' : ''}
+              />
+            </>
+          )}
         </div>
         {draft.repeat === 'none' && (
           <div className="field">
@@ -145,10 +169,17 @@ export default function TaskEditor({ task, initialTitle = '', initialDate = null
             )}
           </div>
         )}
-        <div className="field">
-          <span className="label">Best time (optional)</span>
-          <Chips options={PREFERRED_TIMES} value={draft.preferredTime} onChange={(preferredTime) => set({ preferredTime })} className={draft.type === 'want' ? 'want' : ''} />
-        </div>
+        {!several && (
+          <div className="field">
+            <span className="label">Best time (optional)</span>
+            <Chips
+              options={PREFERRED_TIMES}
+              value={draft.preferredTime}
+              onChange={(preferredTime) => set({ preferredTime })}
+              className={draft.type === 'want' ? 'want' : ''}
+            />
+          </div>
+        )}
         <div className="field">
           <span className="label">Category (optional)</span>
           <Chips
