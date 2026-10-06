@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import AccountSheet, { NewPasswordSheet } from '../components/AccountSheet.jsx'
 import PrepTemplateEditor from '../components/PrepTemplateEditor.jsx'
 import SpecialDaysSheet from '../components/SpecialDaysSheet.jsx'
+import PlusSheet from '../components/PlusSheet.jsx'
 import { myBirthdayValue, parseBirthday } from '../components/BirthdayAsk.jsx'
 import TemplateEditor, { weeklyFreeMinutes } from '../components/TemplateEditor.jsx'
 import { Icon, Toggle, useToast } from '../components/ui.jsx'
@@ -22,6 +23,7 @@ const SYNC_LABELS = {
 
 export default function Settings({ onBack }) {
   const { state, actions, cloud, today } = useStore()
+  const [plusOpen, setPlusOpen] = useState(false)
   const [specialOpen, setSpecialOpen] = useState(false)
   const plus = hasPlus(state)
   const season = themeFor(today, state.specialDays)
@@ -212,6 +214,9 @@ export default function Settings({ onBack }) {
           Plus <span className="plus-badge">{PLUS_LABEL}</span>
         </p>
         <div className="card stack">
+          <button className="btn" onClick={() => setPlusOpen(true)}>
+            ✨ See everything in Plus
+          </button>
           <div className="row spread">
             <span>
               <b>Holiday prep</b>
@@ -366,6 +371,7 @@ export default function Settings({ onBack }) {
         <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files[0] && importData(e.target.files[0])} />
       </div>
 
+      {plusOpen && <PlusSheet onClose={() => setPlusOpen(false)} />}
       {specialOpen && <SpecialDaysSheet onClose={() => setSpecialOpen(false)} />}
       {signingIn && <AccountSheet onClose={() => setSigningIn(false)} />}
       {changingPassword && <NewPasswordSheet title="Change password" onClose={() => setChangingPassword(false)} />}

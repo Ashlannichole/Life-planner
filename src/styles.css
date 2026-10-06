@@ -1409,9 +1409,11 @@ input.input::-webkit-date-and-time-value {
 
 /* ---------- holiday decorations (Plus) */
 
-.app {
-  position: relative;
-  z-index: 1;
+/* The background bits sit behind everything (z-index -1), so the page color has to come
+   from <html> alone: a body background would paint over them. No stacking context on
+   .app, or its sheets would end up under the tab bar. */
+body {
+  background: transparent;
 }
 
 .garland {
@@ -1528,7 +1530,7 @@ input.input::-webkit-date-and-time-value {
 .decor-bits {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   overflow: hidden;
   pointer-events: none;
 }
@@ -1629,4 +1631,151 @@ input.input::-webkit-date-and-time-value {
 }
 .decor-bits span {
   opacity: 0.42;
+}
+
+/* ---------- bed day, welcome back */
+.bed-card {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+/* ---------- make it smaller (steps) */
+.steps-edit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.steps-edit li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.steps-edit .step-num {
+  flex: none;
+  width: 20px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--muted);
+}
+.steps-edit .input {
+  flex: 1;
+  min-width: 0;
+}
+.steps-list {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.step.next {
+  background: var(--accent-soft);
+  font-weight: 650;
+}
+.step.done span:last-child {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.step-box {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border: 2px solid var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  color: var(--accent-ink);
+}
+.step.done .step-box {
+  background: var(--accent);
+}
+.steps-list.big .step {
+  font-size: 1.05rem;
+  padding: 10px 12px;
+}
+.tag.steps {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ---------- do it with me (focus buddy) */
+.buddy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.buddy-plant {
+  animation: buddy-work 2.4s ease-in-out infinite alternate;
+  transform-origin: 50% 100%;
+}
+@keyframes buddy-work {
+  from {
+    transform: rotate(-3deg) scale(1);
+  }
+  to {
+    transform: rotate(3deg) scale(1.04);
+  }
+}
+.buddy-bubble {
+  position: relative;
+  max-width: 260px;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+  animation: bubble-in 0.4s ease-out;
+}
+.buddy-bubble::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-top: 0;
+  border-bottom-color: var(--accent-soft);
+}
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.buddy-sounds {
+  justify-content: center;
+}
+.dump-dropped {
+  opacity: 0.45;
+}
+.dump-dropped .title {
+  text-decoration: line-through;
+}
+.plus-card {
+  background: var(--accent-soft);
+  border-color: transparent;
 }
