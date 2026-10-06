@@ -163,7 +163,12 @@ export function initialState() {
       nutrition: false,
       calorieTarget: null,
       theme: 'sage',
+      showHolidays: true, // holidays on the calendar (everyone)
+      holidayPrep: false, // Plus: ask about upcoming holidays and plan them
+      seasonalTheme: false, // Plus: colors that change with the month
     },
+    holidayPlans: {}, // 'thanksgiving-2026' → { answer, at } or { snoozeUntil }
+    specialDays: [], // birthdays and anniversaries { id, kind, name, month, day, year? }: yearly, never take up time
     energy: {},
     workouts: {},
     milestones: {},

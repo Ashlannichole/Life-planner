@@ -1,11 +1,14 @@
 import { useRef, useState } from 'react'
 import AccountSheet, { NewPasswordSheet } from '../components/AccountSheet.jsx'
 import PrepTemplateEditor from '../components/PrepTemplateEditor.jsx'
+import SpecialDaysSheet from '../components/SpecialDaysSheet.jsx'
 import TemplateEditor, { weeklyFreeMinutes } from '../components/TemplateEditor.jsx'
 import { Icon, Toggle, useToast } from '../components/ui.jsx'
 import { formatMinutes } from '../lib/dates.js'
 import { APP_NAME, DEFAULT_TEMPLATE_BLOCKS, uid } from '../lib/model.js'
 import { MILESTONES, THEMES } from '../lib/milestones.js'
+import { hasPlus, PLUS_LABEL } from '../lib/plus.js'
+import { seasonFor } from '../lib/seasons.js'
 import { allPrepTemplates } from '../lib/prep.js'
 import { useStore } from '../store.jsx'
 
@@ -17,7 +20,10 @@ const SYNC_LABELS = {
 }
 
 export default function Settings({ onBack }) {
-  const { state, actions, cloud } = useStore()
+  const { state, actions, cloud, today } = useStore()
+  const [specialOpen, setSpecialOpen] = useState(false)
+  const plus = hasPlus(state)
+  const season = seasonFor(today)
   const toast = useToast()
   const [signingIn, setSigningIn] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
@@ -199,7 +205,48 @@ export default function Settings({ onBack }) {
       )}
 
       <div className="section">
-        <p className="section-title">Color theme</p>
+        <p className="section-title">
+          Plus <span className="plus-badge">{PLUS_LABEL}</span>
+        </p>
+        <div className="card stack">
+          <div className="row spread">
+            <span>
+              <b>Holiday prep</b>
+              <br />
+              <span className="small muted">
+                A few weeks before Thanksgiving, Christmas, birthdays and more, answer one question and the prep gets planned.
+              </span>
+            </span>
+            <Toggle on={!!state.settings.holidayPrep && plus} onChange={(holidayPrep) => actions.updateSettings({ holidayPrep })} label="Holiday prep" />
+          </div>
+          <div className="row spread">
+            <span>
+              <b>Seasonal themes</b>
+              <br />
+              <span className="small muted">
+                Colors that change with the month. This month: {season.emoji} {season.name}.
+              </span>
+            </span>
+            <Toggle on={!!state.settings.seasonalTheme && plus} onChange={(seasonalTheme) => actions.updateSettings({ seasonalTheme })} label="Seasonal themes" />
+          </div>
+        </div>
+      </div>
+
+      <div className="section">
+        <p className="section-title">Holidays & special days</p>
+        <div className="card stack">
+          <div className="row spread">
+            <span>Show holidays on the calendar</span>
+            <Toggle on={state.settings.showHolidays !== false} onChange={(showHolidays) => actions.updateSettings({ showHolidays })} label="Show holidays" />
+          </div>
+          <button className="btn" onClick={() => setSpecialOpen(true)}>
+            🎂 Birthdays & anniversaries{state.specialDays?.length ? ` · ${state.specialDays.length}` : ''}
+          </button>
+        </div>
+      </div>
+
+      <div className="section">
+        <p className="section-title">Color theme{state.settings.seasonalTheme && plus ? ' (seasonal theme is on)' : ''}</p>
         <div className="chips">
           {THEMES.map((t) => {
             const unlocked = (state.unlockedThemes || ['sage']).includes(t.id)
@@ -295,6 +342,7 @@ export default function Settings({ onBack }) {
         <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files[0] && importData(e.target.files[0])} />
       </div>
 
+      {specialOpen && <SpecialDaysSheet onClose={() => setSpecialOpen(false)} />}
       {signingIn && <AccountSheet onClose={() => setSigningIn(false)} />}
       {changingPassword && <NewPasswordSheet title="Change password" onClose={() => setChangingPassword(false)} />}
       {editingTemplate && <TemplateEditor template={editingTemplate} onClose={() => setEditingTemplate(null)} />}

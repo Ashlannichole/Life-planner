@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { addMonths, formatDay, formatMonth, formatShortDate, formatTime, monthGrid, startOfMonth, weekday } from '../lib/dates.js'
+import { holidaysOn } from '../lib/holidays.js'
 import { eventsOnDay } from '../lib/scheduler.js'
 import { Icon } from './ui.jsx'
 
@@ -10,7 +11,7 @@ const MAX_IN_CELL = 2
  * A month at a glance: events only (no chores). Tap a day to see its events below the
  * grid and add one on that day; tap an event to open it.
  */
-export default function MonthCalendar({ events, today, onOpenEvent, onAddOnDay }) {
+export default function MonthCalendar({ events, specialDays = [], showHolidays = true, today, onOpenEvent, onAddOnDay, onOpenSpecialDays }) {
   const [month, setMonth] = useState(() => startOfMonth(today))
   const [selected, setSelected] = useState(today)
   const weeks = monthGrid(month)
@@ -19,6 +20,9 @@ export default function MonthCalendar({ events, today, onOpenEvent, onAddOnDay }
   const byDay = (key) =>
     eventsOnDay(events, key).sort((a, b) => Number(!a.allDay) - Number(!b.allDay) || (a.start || '').localeCompare(b.start || ''))
   const dayEvents = byDay(selected)
+  // Holidays (if shown), birthdays and anniversaries: labels only, they never take up time.
+  const marksOn = (key) => holidaysOn(key, specialDays).filter((h) => h.specialId || showHolidays)
+  const dayMarks = marksOn(selected)
 
   const go = (n) => {
     const next = addMonths(month, n)
@@ -55,7 +59,9 @@ export default function MonthCalendar({ events, today, onOpenEvent, onAddOnDay }
         ))}
         {weeks.flat().map((key) => {
           const list = byDay(key)
-          const extra = list.length - MAX_IN_CELL
+          const marks = marksOn(key)
+          const room = Math.max(0, MAX_IN_CELL - marks.length)
+          const extra = list.length - room
           const classes = ['month-cell']
           if (!inMonth(key)) classes.push('other')
           if (key === today) classes.push('today')
@@ -67,11 +73,16 @@ export default function MonthCalendar({ events, today, onOpenEvent, onAddOnDay }
               role="gridcell"
               className={classes.join(' ')}
               onClick={() => setSelected(key)}
-              aria-label={`${formatDay(key)}${list.length ? `, ${list.length} event${list.length === 1 ? '' : 's'}` : ''}`}
+              aria-label={`${formatDay(key)}${marks.map((m) => `, ${m.name}`).join('')}${list.length ? `, ${list.length} event${list.length === 1 ? '' : 's'}` : ''}`}
               aria-selected={key === selected}
             >
               <span className="month-date">{Number(key.slice(8))}</span>
-              {list.slice(0, MAX_IN_CELL).map((e) => (
+              {marks.map((m) => (
+                <span key={m.key} className="month-mark">
+                  {m.emoji} {m.name}
+                </span>
+              ))}
+              {list.slice(0, room).map((e) => (
                 <span
                   key={e.id}
                   className={`month-event ${e.endDate && e.endDate > e.date ? 'span' : ''} ${e.date < key ? 'cont-left' : ''} ${
@@ -92,6 +103,15 @@ export default function MonthCalendar({ events, today, onOpenEvent, onAddOnDay }
         <p className="section-title" style={{ margin: 0 }}>
           {formatDay(selected, today)}
         </p>
+        {dayMarks.map((m) => (
+          <div key={m.key} className="event-pill holiday-pill">
+            <span style={{ fontSize: '1.2rem' }}>{m.emoji}</span>
+            <span style={{ fontWeight: 650 }}>
+              {m.name}
+              {m.detail ? <span className="small muted"> · {m.detail}</span> : null}
+            </span>
+          </div>
+        ))}
         {dayEvents.length ? (
           <div className="task-list">
             {dayEvents.map((e) => (
@@ -113,15 +133,20 @@ export default function MonthCalendar({ events, today, onOpenEvent, onAddOnDay }
             ))}
           </div>
         ) : (
-          <p className="small muted" style={{ margin: 0 }}>
-            Nothing on this day.
-          </p>
+          !dayMarks.length && (
+            <p className="small muted" style={{ margin: 0 }}>
+              Nothing on this day.
+            </p>
+          )
         )}
         {selected >= today && (
           <button className="btn ghost" onClick={() => onAddOnDay(selected)}>
             <Icon name="plus" width="18" height="18" /> Add an event on {formatDay(selected, today)}
           </button>
         )}
+        <button className="btn ghost" onClick={onOpenSpecialDays}>
+          🎂 Birthdays & anniversaries
+        </button>
       </div>
     </div>
   )
