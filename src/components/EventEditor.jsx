@@ -6,14 +6,14 @@ import { useStore } from '../store.jsx'
 import PrepAdder from './PrepAdder.jsx'
 import { Sheet, Toggle, useToast } from './ui.jsx'
 
-export default function EventEditor({ event, onClose }) {
+export default function EventEditor({ event, initialDate, onClose }) {
   const { state, actions } = useStore()
   const toast = useToast()
   const [draft, setDraft] = useState(
     () =>
       event || {
         title: '',
-        date: todayKey(),
+        date: initialDate || todayKey(),
         endDate: null,
         allDay: false,
         start: '18:00',

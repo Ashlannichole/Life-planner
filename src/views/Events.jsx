@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import EventEditor from '../components/EventEditor.jsx'
+import MonthCalendar from '../components/MonthCalendar.jsx'
 import PackingList from '../components/PackingList.jsx'
 import PrepAdder from '../components/PrepAdder.jsx'
-import { Icon, Sheet, useToast } from '../components/ui.jsx'
+import { Icon, Segmented, Sheet, useToast } from '../components/ui.jsx'
 import { diffDays, formatDay, formatShortDate, formatTime } from '../lib/dates.js'
 import { findPrepTemplate, fitDaysBefore, templateWithItems } from '../lib/prep.js'
 import { useStore } from '../store.jsx'
@@ -104,8 +105,27 @@ function EventDetail({ event, onClose, onEdit }) {
   )
 }
 
+// Remembers Month vs List on this device.
+const VIEW_KEY = 'sprout.eventsView'
+const readView = () => {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'month'
+  } catch {
+    return 'month'
+  }
+}
+
 export default function Events() {
   const { state, today } = useStore()
+  const [view, setViewState] = useState(readView)
+  const setView = (v) => {
+    setViewState(v)
+    try {
+      localStorage.setItem(VIEW_KEY, v)
+    } catch {
+      // Private browsing: it just won't remember.
+    }
+  }
   const [editing, setEditing] = useState(null)
   const [openId, setOpenId] = useState(null)
   const [showPast, setShowPast] = useState(false)
@@ -148,24 +168,44 @@ export default function Events() {
         </button>
       </div>
 
-      {upcoming.length === 0 && (
-        <div className="empty">
-          <span className="big-emoji">🗓️</span>
-          No upcoming events. Add appointments, trips, or anything that takes up time.
-        </div>
-      )}
-      <div className="task-list">{upcoming.map(row)}</div>
+      <Segmented
+        options={[
+          { id: 'month', label: 'Month' },
+          { id: 'list', label: 'List' },
+        ]}
+        value={view}
+        onChange={setView}
+      />
 
-      {past.length > 0 && (
-        <div className="section">
-          <button className="section-title" onClick={() => setShowPast((s) => !s)}>
-            {showPast ? '▾' : '▸'} Past · {past.length}
-          </button>
-          {showPast && <div className="task-list">{past.map(row)}</div>}
-        </div>
+      {view === 'month' ? (
+        <MonthCalendar
+          events={state.events}
+          today={today}
+          onOpenEvent={(e) => setOpenId(e.id)}
+          onAddOnDay={(date) => setEditing({ new: true, date })}
+        />
+      ) : (
+        <>
+          {upcoming.length === 0 && (
+            <div className="empty">
+              <span className="big-emoji">🗓️</span>
+              No upcoming events. Add appointments, trips, or anything that takes up time.
+            </div>
+          )}
+          <div className="task-list">{upcoming.map(row)}</div>
+
+          {past.length > 0 && (
+            <div className="section">
+              <button className="section-title" onClick={() => setShowPast((s) => !s)}>
+                {showPast ? '▾' : '▸'} Past · {past.length}
+              </button>
+              {showPast && <div className="task-list">{past.map(row)}</div>}
+            </div>
+          )}
+        </>
       )}
 
-      {editing && <EventEditor event={editing.new ? null : editing} onClose={() => setEditing(null)} />}
+      {editing && <EventEditor event={editing.new ? null : editing} initialDate={editing.date} onClose={() => setEditing(null)} />}
       {open && !editing && (
         <EventDetail
           event={open}
