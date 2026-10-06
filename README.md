@@ -122,3 +122,7 @@ Titles already on the list are skipped. A weekly "Grocery shopping" chore double
 
 Everything else in the v2 section of the spec (friends, shared garden, body doubling,
 challenges, notifications, calendar import). The app name and final art direction are still open.
+
+## iPhone & Android app
+
+The `mobile/` folder is a small Expo app that shows the live site full screen. It gets onto TestFlight with one command, and no Mac is needed. See [mobile/README.md](mobile/README.md).
