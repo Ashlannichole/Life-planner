@@ -2,13 +2,14 @@ import { useRef, useState } from 'react'
 import AccountSheet, { NewPasswordSheet } from '../components/AccountSheet.jsx'
 import PrepTemplateEditor from '../components/PrepTemplateEditor.jsx'
 import SpecialDaysSheet from '../components/SpecialDaysSheet.jsx'
+import { myBirthdayValue, parseBirthday } from '../components/BirthdayAsk.jsx'
 import TemplateEditor, { weeklyFreeMinutes } from '../components/TemplateEditor.jsx'
 import { Icon, Toggle, useToast } from '../components/ui.jsx'
 import { formatMinutes } from '../lib/dates.js'
 import { APP_NAME, DEFAULT_TEMPLATE_BLOCKS, uid } from '../lib/model.js'
 import { MILESTONES, THEMES } from '../lib/milestones.js'
 import { hasPlus, PLUS_LABEL } from '../lib/plus.js'
-import { seasonFor } from '../lib/seasons.js'
+import { themeFor } from '../lib/seasons.js'
 import { allPrepTemplates } from '../lib/prep.js'
 import { useStore } from '../store.jsx'
 
@@ -23,7 +24,8 @@ export default function Settings({ onBack }) {
   const { state, actions, cloud, today } = useStore()
   const [specialOpen, setSpecialOpen] = useState(false)
   const plus = hasPlus(state)
-  const season = seasonFor(today)
+  const season = themeFor(today, state.specialDays)
+  const others = (state.specialDays || []).filter((d) => !d.self).length
   const toast = useToast()
   const [signingIn, setSigningIn] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
@@ -222,14 +224,24 @@ export default function Settings({ onBack }) {
           </div>
           <div className="row spread">
             <span>
-              <b>Seasonal themes</b>
+              <b>Holiday themes</b>
               <br />
               <span className="small muted">
-                Colors that change with the month. This month: {season.emoji} {season.name}.
+                Colors for every holiday and season, a party on your birthday. Right now: {season.emoji} {season.name}.
               </span>
             </span>
-            <Toggle on={!!state.settings.seasonalTheme && plus} onChange={(seasonalTheme) => actions.updateSettings({ seasonalTheme })} label="Seasonal themes" />
+            <Toggle on={!!state.settings.seasonalTheme && plus} onChange={(seasonalTheme) => actions.updateSettings({ seasonalTheme })} label="Holiday themes" />
           </div>
+          {state.settings.seasonalTheme && plus && (
+            <div className="row spread">
+              <span>
+                <b>Decorations</b>
+                <br />
+                <span className="small muted">Twinkly lights, critters peeking over your calendar and things drifting in the background.</span>
+              </span>
+              <Toggle on={state.settings.themeDecor !== false} onChange={(themeDecor) => actions.updateSettings({ themeDecor })} label="Decorations" />
+            </div>
+          )}
         </div>
       </div>
 
@@ -240,14 +252,25 @@ export default function Settings({ onBack }) {
             <span>Show holidays on the calendar</span>
             <Toggle on={state.settings.showHolidays !== false} onChange={(showHolidays) => actions.updateSettings({ showHolidays })} label="Show holidays" />
           </div>
+          <div className="row spread">
+            <label htmlFor="my-birthday">🥳 Your birthday</label>
+            <input
+              id="my-birthday"
+              className="input"
+              type="date"
+              style={{ maxWidth: 170 }}
+              value={myBirthdayValue(state.specialDays)}
+              onChange={(e) => actions.setMyBirthday(e.target.value ? parseBirthday(e.target.value) : null)}
+            />
+          </div>
           <button className="btn" onClick={() => setSpecialOpen(true)}>
-            🎂 Birthdays & anniversaries{state.specialDays?.length ? ` · ${state.specialDays.length}` : ''}
+            🎂 Other birthdays & anniversaries{others ? ` · ${others}` : ''}
           </button>
         </div>
       </div>
 
       <div className="section">
-        <p className="section-title">Color theme{state.settings.seasonalTheme && plus ? ' (seasonal theme is on)' : ''}</p>
+        <p className="section-title">Color theme{state.settings.seasonalTheme && plus ? ' (holiday themes are on)' : ''}</p>
         <div className="chips">
           {THEMES.map((t) => {
             const unlocked = (state.unlockedThemes || ['sage']).includes(t.id)

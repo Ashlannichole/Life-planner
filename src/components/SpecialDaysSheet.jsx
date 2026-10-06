@@ -23,7 +23,8 @@ export default function SpecialDaysSheet({ onClose }) {
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
   const [withYear, setWithYear] = useState(false)
-  const days = [...(state.specialDays || [])].sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
+  // Your own birthday lives in Settings; this list is everyone else's days.
+  const days = (state.specialDays || []).filter((d) => !d.self).sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
 
   const save = (e) => {
     e.preventDefault()

@@ -165,10 +165,12 @@ export function initialState() {
       theme: 'sage',
       showHolidays: true, // holidays on the calendar (everyone)
       holidayPrep: false, // Plus: ask about upcoming holidays and plan them
-      seasonalTheme: false, // Plus: colors that change with the month
+      seasonalTheme: false, // Plus: colors that change with the month, and dressed up for holidays
+      themeDecor: true, // with seasonal themes: lights, critters and background bits
+      birthdayAsked: false, // asked for the person's own birthday (answered or "not now")
     },
     holidayPlans: {}, // 'thanksgiving-2026' → { answer, at } or { snoozeUntil }
-    specialDays: [], // birthdays and anniversaries { id, kind, name, month, day, year? }: yearly, never take up time
+    specialDays: [], // birthdays and anniversaries { id, kind, name, month, day, year?, self? }: yearly, never take up time
     energy: {},
     workouts: {},
     milestones: {},

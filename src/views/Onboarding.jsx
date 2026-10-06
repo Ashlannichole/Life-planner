@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import AccountSheet from '../components/AccountSheet.jsx'
+import { myBirthdayValue, parseBirthday } from '../components/BirthdayAsk.jsx'
 import LibraryPicker from '../components/LibraryPicker.jsx'
 import Plant from '../components/Plant.jsx'
 import { Toggle } from '../components/ui.jsx'
@@ -37,6 +38,7 @@ export default function Onboarding() {
   const [plantId, setPlantId] = useState(state.plant.current.typeId)
   const [holidayPrep, setHolidayPrep] = useState(!!state.settings.holidayPrep)
   const [seasonalTheme, setSeasonalTheme] = useState(!!state.settings.seasonalTheme)
+  const [birthday, setBirthday] = useState(() => myBirthdayValue(state.specialDays))
 
   const finish = () => {
     const blocks = FREE_TIME.filter((f) => free.has(f.id)).flatMap((f) => f.blocks)
@@ -50,7 +52,12 @@ export default function Onboarding() {
     const picked = LIBRARY.filter((e) => chores.has(e.index))
     updates.tasks = [...state.tasks, ...tasks.map((t) => makeTask(t)), ...tasksFromLibrary(picked, todayKey())]
     updates.plant = { ...state.plant, current: { ...state.plant.current, typeId: plantId } }
-    updates.settings = { ...state.settings, holidayPrep, seasonalTheme }
+    updates.settings = { ...state.settings, holidayPrep, seasonalTheme, birthdayAsked: true }
+    if (birthday) {
+      const { year, month, day } = parseBirthday(birthday)
+      const others = (state.specialDays || []).filter((d) => !d.self)
+      updates.specialDays = [...others, { id: 'self-birthday', kind: 'birthday', self: true, name: '', month, day, year }]
+    }
     actions.finishOnboarding(updates)
   }
 
@@ -78,6 +85,21 @@ export default function Onboarding() {
       )}
     </>,
     <>
+      <div className="grow stack" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+        <div style={{ fontSize: '4rem' }} aria-hidden="true">
+          🎂
+        </div>
+        <h1>When’s your birthday?</h1>
+        <p className="muted" style={{ maxWidth: 340, margin: 0 }}>
+          It goes on your calendar and the day gets a little party. Skip it if you’d rather not say.
+        </p>
+        <input className="input" type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} aria-label="Your birthday" style={{ maxWidth: 260 }} />
+      </div>
+      <button className="btn primary big" onClick={() => setStep(2)}>
+        {birthday ? 'Next' : 'Skip for now'}
+      </button>
+    </>,
+    <>
       <div className="grow stack">
         <h1>When are you usually free?</h1>
         <p className="muted" style={{ margin: 0 }}>
@@ -102,7 +124,7 @@ export default function Onboarding() {
           </button>
         ))}
       </div>
-      <button className="btn primary big" onClick={() => setStep(2)}>
+      <button className="btn primary big" onClick={() => setStep(3)}>
         Next
       </button>
     </>,
@@ -148,7 +170,7 @@ export default function Onboarding() {
           <LibraryPicker selected={chores} onChange={setChores} />
         </div>
       </div>
-      <button className="btn primary big onboarding-next" onClick={() => setStep(3)}>
+      <button className="btn primary big onboarding-next" onClick={() => setStep(4)}>
         {tasks.length + chores.size ? `Next (${tasks.length + chores.size} added)` : 'Next'}
       </button>
     </>,
@@ -178,9 +200,9 @@ export default function Onboarding() {
           </div>
           <div className="row spread">
             <span className="small">
-              <b>Seasonal themes.</b> Colors that change with the month, like pumpkin in October.
+              <b>Holiday themes.</b> Twinkly lights, cute critters and colors for every holiday, like little monsters all October.
             </span>
-            <Toggle on={seasonalTheme} onChange={setSeasonalTheme} label="Seasonal themes" />
+            <Toggle on={seasonalTheme} onChange={setSeasonalTheme} label="Holiday themes" />
           </div>
         </div>
       </div>
@@ -193,7 +215,7 @@ export default function Onboarding() {
   return (
     <div className="onboarding">
       <div className="row spread">
-        <div className="dots" aria-label={`Step ${step + 1} of 4`}>
+        <div className="dots" aria-label={`Step ${step + 1} of ${steps.length}`}>
           {steps.map((_, i) => (
             <i key={i} className={i === step ? 'on' : ''} />
           ))}

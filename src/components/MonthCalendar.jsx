@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { addMonths, formatDay, formatMonth, formatShortDate, formatTime, monthGrid, startOfMonth, weekday } from '../lib/dates.js'
 import { holidaysOn } from '../lib/holidays.js'
 import { eventsOnDay } from '../lib/scheduler.js'
+import { Garland, Peekers, useDecor } from './ThemeDecor.jsx'
 import { Icon } from './ui.jsx'
 
 const WEEK_HEAD = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -14,6 +15,7 @@ const MAX_IN_CELL = 2
 export default function MonthCalendar({ events, specialDays = [], showHolidays = true, today, onOpenEvent, onAddOnDay, onOpenSpecialDays }) {
   const [month, setMonth] = useState(() => startOfMonth(today))
   const [selected, setSelected] = useState(today)
+  const holidayTheme = useDecor()
   const weeks = monthGrid(month)
   const inMonth = (key) => key.slice(0, 7) === month.slice(0, 7)
 
@@ -32,6 +34,7 @@ export default function MonthCalendar({ events, specialDays = [], showHolidays =
 
   return (
     <div className="stack" style={{ gap: 12 }}>
+      <Garland theme={holidayTheme} />
       <div className="row spread">
         <button className="icon-btn" onClick={() => go(-1)} aria-label="Previous month">
           <Icon name="chevronLeft" />
@@ -57,6 +60,12 @@ export default function MonthCalendar({ events, specialDays = [], showHolidays =
             {d}
           </div>
         ))}
+        {/* Holiday critters peek over the first row of days. */}
+        {holidayTheme?.decor?.critters && (
+          <div className="month-peekers">
+            <Peekers theme={holidayTheme} pick={1} count={3} size={42} />
+          </div>
+        )}
         {weeks.flat().map((key) => {
           const list = byDay(key)
           const marks = marksOn(key)

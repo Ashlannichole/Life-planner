@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import Celebration from './components/Celebration.jsx'
 import Focus from './components/Focus.jsx'
 import Recap from './components/Recap.jsx'
+import { DecorBits, useDecor } from './components/ThemeDecor.jsx'
 import { NewPasswordSheet } from './components/AccountSheet.jsx'
 import { Icon, ToastProvider } from './components/ui.jsx'
 import { THEMES } from './lib/milestones.js'
 import { hasPlus } from './lib/plus.js'
-import { SEASONAL_THEMES, seasonFor } from './lib/seasons.js'
+import { BIRTHDAY_THEME, HOLIDAY_THEMES, SEASONAL_THEMES, themeFor } from './lib/seasons.js'
 import { useStore } from './store.jsx'
 import Events from './views/Events.jsx'
 import Garden from './views/Garden.jsx'
@@ -28,7 +29,7 @@ const TABS = [
 ]
 
 // Accent colors for each theme, in light and dark mode.
-const THEME_CSS = [...THEMES, ...SEASONAL_THEMES].map(
+const THEME_CSS = [...THEMES, ...SEASONAL_THEMES, ...HOLIDAY_THEMES, BIRTHDAY_THEME].map(
   (t) => `
 [data-theme='${t.id}'] { --accent: ${t.light}; --need: ${t.light}; --accent-soft: ${t.softLight}; --need-soft: ${t.softLight}; }
 @media (prefers-color-scheme: dark) {
@@ -38,8 +39,9 @@ const THEME_CSS = [...THEMES, ...SEASONAL_THEMES].map(
 
 export default function App() {
   const { state, cloud, today } = useStore()
-  // Plus: seasonal themes follow the month; otherwise the theme the person picked.
-  const theme = state.settings.seasonalTheme && hasPlus(state) ? seasonFor(today).id : state.settings.theme || 'sage'
+  // Plus: seasonal themes follow the month and dress up for holidays; otherwise the theme the person picked.
+  const theme = state.settings.seasonalTheme && hasPlus(state) ? themeFor(today, state.specialDays).id : state.settings.theme || 'sage'
+  const holidayTheme = useDecor()
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
@@ -84,6 +86,7 @@ export default function App() {
   return (
     <ToastProvider>
       <style>{THEME_CSS}</style>
+      <DecorBits theme={holidayTheme} />
       <div className="app">
         {tab !== 'settings' && (
           <div className="topbar" style={{ marginBottom: 4, justifyContent: 'flex-end' }}>
