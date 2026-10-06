@@ -1,19 +1,40 @@
 import { describe, expect, it } from 'vitest'
 import { BUILT_IN_PREP } from './model.js'
-import { allPrepTemplates, EXTRA_TRIP_PREP, fitDaysBefore, makePrepTasks, prepSuggestions, templateWithItems } from './prep.js'
+import { allPrepTemplates, eventIdeas, EXTRA_TRIP_PREP, fitDaysBefore, makePrepTasks, prepSuggestions, templateWithItems } from './prep.js'
 
 const trip = BUILT_IN_PREP.find((t) => t.id === 'trip')
 
 describe('prepSuggestions', () => {
   it('offers extra trip prep, skipping what the event already has', () => {
-    const titles = prepSuggestions(true, ['hold MAIL / packages ', 'Pack']).map((s) => s.title)
+    const titles = prepSuggestions({ isTrip: true, existingTitles: ['hold MAIL / packages ', 'Pack'] }).map((s) => s.title)
     expect(titles).not.toContain('Hold mail / packages')
     expect(titles).toContain('Check passport / ID')
     expect(titles.length).toBe(EXTRA_TRIP_PREP.length - 1)
   })
 
-  it('offers nothing for non-trips', () => {
-    expect(prepSuggestions(false, [])).toEqual([])
+  it('offers nothing for an event it doesn’t recognise', () => {
+    expect(prepSuggestions({ title: 'Team sync' })).toEqual([])
+  })
+
+  it('matches ideas to the event’s name', () => {
+    const shower = prepSuggestions({ title: 'Baby shower for Kat' }).map((s) => s.title)
+    expect(shower).toContain('Order a gift from the registry')
+    expect(shower).toContain('RSVP')
+    const bday = prepSuggestions({ title: 'Mom’s Birthday' }).map((s) => s.title)
+    expect(bday).toContain('Pick out a birthday gift')
+    expect(bday).toContain('Wrap the gift')
+    expect(prepSuggestions({ title: 'Dentist' }).map((s) => s.title)).toContain('Find insurance card')
+  })
+
+  it('gives enough lead time to order a gift', () => {
+    const order = eventIdeas('baby shower').find((i) => /gift/i.test(i.title))
+    expect(order.daysBefore).toBeGreaterThanOrEqual(7)
+  })
+
+  it('doesn’t repeat ideas shared by two matches, or ones already added', () => {
+    const titles = prepSuggestions({ title: 'Birthday party', existingTitles: ['get a card'] }).map((s) => s.title)
+    expect(new Set(titles).size).toBe(titles.length)
+    expect(titles).not.toContain('Get a card')
   })
 })
 

@@ -33,11 +33,47 @@ export const PREP_WHEN = [
 
 const norm = (s) => s.trim().toLowerCase()
 
-/** Suggestions not already on this event (or picked for it). Trips only. */
-export function prepSuggestions(isTrip, existingTitles) {
-  if (!isTrip) return []
+// One-tap prep ideas matched from the event's name, so a "Baby shower" or "Mom's birthday"
+// comes with the usual to-dos and nobody has to think them up. Days before are picked so
+// shipping, RSVPs and wrapping land in time.
+const gift = (title = 'Order a gift', daysBefore = 10) => ({ title, daysBefore, minutes: 30, category: 'errands' })
+const card = { title: 'Get a card', daysBefore: 3, minutes: 15, category: 'errands' }
+const wrap = { title: 'Wrap the gift', daysBefore: 1, minutes: 15, category: 'other' }
+const rsvp = { title: 'RSVP', daysBefore: 14, minutes: 5, category: 'admin' }
+const outfit = { title: 'Pick out an outfit', daysBefore: 2, minutes: 15, category: 'other' }
+
+export const EVENT_IDEAS = [
+  { match: /baby ?shower|sprinkle|gender reveal/i, items: [rsvp, gift('Order a gift from the registry', 10), card, wrap] },
+  { match: /bridal ?shower|bachelorette|bachelor/i, items: [rsvp, gift('Order a gift from the registry', 10), card, wrap, outfit] },
+  { match: /wedding|engagement/i, items: [rsvp, gift('Order a gift from the registry', 14), card, outfit, { title: 'Book a hair or nails appointment', daysBefore: 10, minutes: 15, category: 'selfcare' }] },
+  { match: /birthday|bday|b-day/i, items: [gift('Pick out a birthday gift', 7), card, wrap] },
+  { match: /anniversary|valentine/i, items: [gift('Plan a gift or surprise', 7), card, { title: 'Book a reservation', daysBefore: 10, minutes: 15, category: 'admin' }] },
+  { match: /graduation|grad party/i, items: [rsvp, gift('Get a graduation gift', 7), card] },
+  { match: /housewarming/i, items: [gift('Pick up a housewarming gift', 3), card] },
+  { match: /christmas|holiday|hanukkah|secret santa|white elephant/i, items: [gift('Buy gifts', 14), wrap, { title: 'Send holiday cards', daysBefore: 10, minutes: 60, category: 'admin' }] },
+  { match: /party|potluck|bbq|barbecue|cookout|dinner at|game night/i, items: [rsvp, { title: 'Pick a dish or drinks to bring', daysBefore: 2, minutes: 30, category: 'errands' }, outfit] },
+  { match: /host|hosting|dinner party/i, items: [{ title: 'Send invites', daysBefore: 14, minutes: 15, category: 'social' }, { title: 'Plan the menu', daysBefore: 5, minutes: 30, category: 'kitchen' }, { title: 'Grocery run', daysBefore: 1, minutes: 60, category: 'errands' }, { title: 'Tidy up', daysBefore: 1, minutes: 60, category: 'cleaning' }] },
+  { match: /doctor|dentist|appointment|appt|checkup|check-up|vet\b/i, items: [{ title: 'Write down questions to ask', daysBefore: 1, minutes: 10, category: 'admin' }, { title: 'Find insurance card', daysBefore: 1, minutes: 5, category: 'admin' }] },
+  { match: /interview/i, items: [{ title: 'Research the company', daysBefore: 2, minutes: 60, category: 'admin' }, { title: 'Practice answers', daysBefore: 1, minutes: 30, category: 'admin' }, outfit] },
+  { match: /\bmov(e|ing)\b/i, items: [{ title: 'Get boxes', daysBefore: 14, minutes: 30, category: 'errands' }, { title: 'Change address', daysBefore: 7, minutes: 30, category: 'admin' }, { title: 'Pack', daysBefore: 3, minutes: 90, category: 'other' }] },
+  { match: /funeral|memorial|wake/i, items: [{ title: 'Send flowers or a card', daysBefore: 3, minutes: 15, category: 'errands' }, outfit] },
+]
+
+/** Prep ideas for an event's name, without duplicates. */
+export function eventIdeas(title = '') {
+  const seen = new Set()
+  return EVENT_IDEAS.filter((idea) => idea.match.test(title))
+    .flatMap((idea) => idea.items)
+    .filter((item) => !seen.has(item.title) && seen.add(item.title))
+    .map((item) => ({ ...item, id: `idea-${norm(item.title).replace(/[^a-z0-9]+/g, '-')}` }))
+}
+
+/** One-tap suggestions for an event, minus anything it already has. */
+export function prepSuggestions({ title = '', isTrip = false, existingTitles = [] }) {
   const have = new Set(existingTitles.map(norm))
-  return EXTRA_TRIP_PREP.filter((s) => !have.has(norm(s.title)))
+  const ideas = [...eventIdeas(title), ...(isTrip ? EXTRA_TRIP_PREP : [])]
+  const seen = new Set()
+  return ideas.filter((s) => !have.has(norm(s.title)) && !seen.has(norm(s.title)) && seen.add(norm(s.title)))
 }
 
 /**

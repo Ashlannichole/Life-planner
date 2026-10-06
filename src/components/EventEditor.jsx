@@ -55,7 +55,7 @@ export default function EventEditor({ event, onClose }) {
       toast('Event updated — plan rebalanced')
     } else {
       const fit = (i) => ({ ...i, daysBefore: fitDaysBefore(todayKey(), clean.date, i.daysBefore) })
-      const items = template ? [...template.items.filter((i) => picked.has(i.id)), ...extras.map(fit)] : []
+      const items = [...(template ? template.items.filter((i) => picked.has(i.id)) : []), ...extras.map(fit)]
       const remembered = extras.filter((i) => i.remember)
       if (template && remembered.length) actions.savePrepTemplate(templateWithItems(template, remembered))
       actions.addEvent(clean, items, template?.packing || [])
@@ -110,33 +110,35 @@ export default function EventEditor({ event, onClose }) {
           </div>
         )}
 
-        {template && !event && (
+        {!event && (
           <div className="field">
             <span className="label">Prep tasks — scheduled backward from the event</span>
-            <div className="menu">
-              {template.items.map((item) => {
-                const on = picked.has(item.id)
-                const { deadline } = prepDates(draft.date, item.daysBefore)
-                return (
-                  <button
-                    type="button"
-                    key={item.id}
-                    onClick={() =>
-                      setPicked((s) => {
-                        const next = new Set(s)
-                        if (on) next.delete(item.id)
-                        else next.add(item.id)
-                        return next
-                      })
-                    }
-                  >
-                    <span style={{ width: 22 }}>{on ? '☑' : '☐'}</span>
-                    <span style={{ flex: 1 }}>{item.title}</span>
-                    <span className="small muted">by {formatShortDate(deadline)}</span>
-                  </button>
-                )
-              })}
-            </div>
+            {template && (
+              <div className="menu">
+                {template.items.map((item) => {
+                  const on = picked.has(item.id)
+                  const { deadline } = prepDates(draft.date, item.daysBefore)
+                  return (
+                    <button
+                      type="button"
+                      key={item.id}
+                      onClick={() =>
+                        setPicked((s) => {
+                          const next = new Set(s)
+                          if (on) next.delete(item.id)
+                          else next.add(item.id)
+                          return next
+                        })
+                      }
+                    >
+                      <span style={{ width: 22 }}>{on ? '☑' : '☐'}</span>
+                      <span style={{ flex: 1 }}>{item.title}</span>
+                      <span className="small muted">by {formatShortDate(deadline)}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
             {extras.length > 0 && (
               <div className="menu">
                 {extras.map((item) => (
@@ -149,12 +151,13 @@ export default function EventEditor({ event, onClose }) {
               </div>
             )}
             <PrepAdder
-              isTrip={template.id === 'trip' || multiDay}
-              existingTitles={[...template.items, ...extras].map((i) => i.title)}
-              templateName={template.name}
+              title={draft.title}
+              isTrip={template?.id === 'trip' || multiDay}
+              existingTitles={[...(template ? template.items : []), ...extras].map((i) => i.title)}
+              templateName={template?.name}
               onAdd={(items, remember) => setExtras((xs) => [...xs, ...items.map((i) => ({ ...i, id: uid(), remember }))])}
             />
-            {template.packing?.length > 0 && <p className="small muted">A packing list will be attached too.</p>}
+            {template?.packing?.length > 0 && <p className="small muted">A packing list will be attached too.</p>}
           </div>
         )}
 
