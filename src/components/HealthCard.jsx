@@ -29,7 +29,8 @@ export default function HealthCard({ day }) {
   if (!health) return null
   const nudge = !day.lowEnergy && !day.bedDay && state.settings.healthNudgeSeen !== today ? healthNudge(health) : null
 
-  if (!nudge) return <HealthSummary health={health} />
+  // The day's numbers live under the greeting (TodayHealthLine); this card is only the offer.
+  if (!nudge) return null
   return (
     <div className="card bed-card stack" style={{ gap: 8 }}>
       <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
@@ -56,4 +57,12 @@ export default function HealthCard({ day }) {
       </div>
     </div>
   )
+}
+
+/** Plus: today's Apple Health numbers, one quiet line under the greeting. */
+export function TodayHealthLine() {
+  const { state, today } = useStore()
+  const health = state.health?.[today]
+  if (!hasPlus(state) || !health) return null
+  return <HealthSummary health={health} />
 }
