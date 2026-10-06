@@ -65,6 +65,23 @@ export function rangeKeys(from, to) {
   return out
 }
 
+/** First day of the month a day key falls in. */
+export function startOfMonth(key) {
+  return `${key.slice(0, 7)}-01`
+}
+
+/**
+ * The weeks to draw for a month calendar: whole Monday-to-Sunday weeks covering the
+ * month, so the grid is always 7 wide (5 or 6 rows; 4 for a February that fits exactly).
+ */
+export function monthGrid(key) {
+  const first = startOfMonth(key)
+  const last = addDays(addMonths(first, 1), -1)
+  const weeks = []
+  for (let start = startOfWeek(first); start <= last; start = addDays(start, 7)) weeks.push(weekDays(start))
+  return weeks
+}
+
 export function timeToMinutes(t) {
   const [h, m] = t.split(':').map(Number)
   return h * 60 + m
@@ -87,6 +104,14 @@ export function formatDay(key, today) {
   }
   const d = fromKey(key)
   return `${WEEKDAY_SHORT[d.getDay()]} ${MONTH_SHORT[d.getMonth()]} ${d.getDate()}`
+}
+
+const MONTH_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+/** "October 2026" */
+export function formatMonth(key) {
+  const d = fromKey(key)
+  return `${MONTH_LONG[d.getMonth()]} ${d.getFullYear()}`
 }
 
 export function formatShortDate(key) {
