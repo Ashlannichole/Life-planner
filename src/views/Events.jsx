@@ -54,6 +54,7 @@ function EventDetail({ event, onClose, onEdit }) {
 
         {(event.endDate || event.date) >= today && (
           <PrepAdder
+            title={event.title}
             isTrip={event.prepTemplateId === 'trip' || !!event.endDate}
             existingTitles={prep.map((t) => t.title)}
             templateName={template?.name}

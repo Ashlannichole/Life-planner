@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { addDays, formatDay, todayKey } from '../lib/dates.js'
 import { CATEGORIES, DURATIONS, PREFERRED_TIMES, REPEATS, durationLabel, guessFromTitle } from '../lib/model.js'
 import { useStore } from '../store.jsx'
 import { Chips, Segmented, Sheet } from './ui.jsx'
@@ -9,7 +10,7 @@ const TYPES = [
 ]
 
 /** Add or edit a task. Only the title is required; everything else has a default. */
-export default function TaskEditor({ task, initialTitle = '', onClose, onSaved }) {
+export default function TaskEditor({ task, initialTitle = '', initialDate = null, onClose, onSaved }) {
   const { actions } = useStore()
   const [draft, setDraft] = useState(() => {
     if (task) return { ...task }
@@ -22,8 +23,13 @@ export default function TaskEditor({ task, initialTitle = '', onClose, onSaved }
       everyDays: 3,
       preferredTime: null,
       category: guess.category,
+      onDate: initialDate,
     }
   })
+  const today = todayKey()
+  const tomorrow = addDays(today, 1)
+  const whenChoice = !draft.onDate ? 'any' : draft.onDate === today ? 'today' : draft.onDate === tomorrow ? 'tomorrow' : 'pick'
+  const [picking, setPicking] = useState(whenChoice === 'pick')
   const [touched, setTouched] = useState({ type: !!task, category: !!task })
   const set = (fields) => setDraft((d) => ({ ...d, ...fields }))
 
@@ -76,7 +82,13 @@ export default function TaskEditor({ task, initialTitle = '', onClose, onSaved }
         </div>
         <div className="field">
           <span className="label">Repeats</span>
-          <Chips options={REPEATS} value={draft.repeat} onChange={(repeat) => set({ repeat })} className={draft.type === 'want' ? 'want' : ''} />
+          <Chips
+            options={REPEATS}
+            value={draft.repeat}
+            // A repeating task has no single day; "Daily" already means every day.
+            onChange={(repeat) => set(repeat === 'none' ? { repeat } : { repeat, onDate: null })}
+            className={draft.type === 'want' ? 'want' : ''}
+          />
           {draft.repeat === 'everyX' && (
             <div className="row">
               <span>Every</span>
@@ -94,6 +106,43 @@ export default function TaskEditor({ task, initialTitle = '', onClose, onSaved }
             </div>
           )}
         </div>
+        {draft.repeat === 'none' && (
+          <div className="field">
+            <span className="label">Which day?</span>
+            <Chips
+              options={[
+                { id: 'any', label: 'Whenever it fits' },
+                { id: 'today', label: 'Today' },
+                { id: 'tomorrow', label: 'Tomorrow' },
+                { id: 'pick', label: picking && draft.onDate && whenChoice === 'pick' ? formatDay(draft.onDate, today) : 'Pick a day' },
+              ]}
+              value={picking ? 'pick' : whenChoice}
+              onChange={(choice) => {
+                setPicking(choice === 'pick')
+                if (choice === 'any') set({ onDate: null })
+                if (choice === 'today') set({ onDate: today })
+                if (choice === 'tomorrow') set({ onDate: tomorrow })
+                if (choice === 'pick') set({ onDate: draft.onDate && draft.onDate > tomorrow ? draft.onDate : addDays(today, 2) })
+              }}
+              className={draft.type === 'want' ? 'want' : ''}
+            />
+            {picking && (
+              <input
+                className="input"
+                type="date"
+                min={today}
+                value={draft.onDate || ''}
+                onChange={(e) => set({ onDate: e.target.value || null })}
+                aria-label="Day"
+              />
+            )}
+            {draft.onDate && (
+              <p className="small muted" style={{ margin: 0 }}>
+                It goes on that day’s list even if the day is full.
+              </p>
+            )}
+          </div>
+        )}
         <div className="field">
           <span className="label">Best time (optional)</span>
           <Chips options={PREFERRED_TIMES} value={draft.preferredTime} onChange={(preferredTime) => set({ preferredTime })} className={draft.type === 'want' ? 'want' : ''} />

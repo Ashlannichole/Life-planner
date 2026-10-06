@@ -4,18 +4,19 @@ import { PREP_WHEN, prepSuggestions } from '../lib/prep.js'
 import { Toggle } from './ui.jsx'
 
 /**
- * Add extra prep tasks to an event: one-tap suggestions for trips, or type
+ * Add extra prep tasks to an event: one-tap suggestions matched to the event (a baby
+ * shower, a birthday, a trip…), or type
  * your own and pick "when" in plain words. Length defaults to 30 minutes so
  * there's nothing else to decide.
  *
  * `templateName` turns on "Add to every future …", which saves the new items
  * into that prep template too.
  */
-export default function PrepAdder({ isTrip, existingTitles, templateName, onAdd }) {
+export default function PrepAdder({ title, isTrip, existingTitles, templateName, onAdd }) {
   const [text, setText] = useState('')
   const [daysBefore, setDaysBefore] = useState(3)
   const [remember, setRemember] = useState(false)
-  const suggestions = prepSuggestions(isTrip, existingTitles)
+  const suggestions = prepSuggestions({ title, isTrip, existingTitles })
 
   // Not a <form>: this sits inside the event editor's form.
   const add = () => {

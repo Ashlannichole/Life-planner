@@ -83,6 +83,7 @@ export function makeTask(fields = {}) {
     doneAt: null,
     deadline: null,
     notBefore: null,
+    onDate: null, // set by the user: do it on this day
     eventId: null,
     prepDaysBefore: null,
     ...fields,
