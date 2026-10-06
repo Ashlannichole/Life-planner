@@ -9,7 +9,7 @@ import TaskEditor from '../components/TaskEditor.jsx'
 import Plant from '../components/Plant.jsx'
 import BirthdayAsk from '../components/BirthdayAsk.jsx'
 import WelcomeBack from '../components/WelcomeBack.jsx'
-import HealthCard from '../components/HealthCard.jsx'
+import HealthCard, { TodayHealthLine } from '../components/HealthCard.jsx'
 import BrainDumpSheet from '../components/BrainDumpSheet.jsx'
 import { Garland, Peekers, useDecor } from '../components/ThemeDecor.jsx'
 import { Icon, useToast } from '../components/ui.jsx'
@@ -175,6 +175,7 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
           </p>
           <h1>{birthday ? 'Happy birthday! 🎂' : greeting()}</h1>
           {countdownText && <span className="theme-countdown">{countdownText}</span>}
+          <TodayHealthLine />
         </div>
         <button className="mini-plant" onClick={() => onNavigate('garden')} aria-label="Open garden">
           <Plant typeId={plant.typeId} potId={plant.potId} water={plant.water} size={64} />

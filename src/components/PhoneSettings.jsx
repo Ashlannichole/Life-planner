@@ -121,14 +121,14 @@ export default function PhoneSettings() {
 
 const hm = (min) => `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, '0')}m`
 
-/** One line of today's numbers: 💤 7h 40m · 🔥 320 kcal · 👟 4,210 steps */
+/** One short line of today's numbers: 💤 7h 40m · 💓 HRV 52 · 🔥 310 cal · 🍽 1,420 eaten · 👟 6,230 */
 export function HealthSummary({ health }) {
   const bits = []
-  if (health.sleepMinutes != null) bits.push(`💤 ${hm(health.sleepMinutes)} sleep`)
+  if (health.sleepMinutes != null) bits.push(`💤 ${hm(health.sleepMinutes)}`)
   if (health.hrv != null) bits.push(`💓 HRV ${Math.round(health.hrv)}`)
-  if (health.activeKcal != null) bits.push(`🔥 ${Math.round(health.activeKcal).toLocaleString()} kcal burned`)
+  if (health.activeKcal != null) bits.push(`🔥 ${Math.round(health.activeKcal).toLocaleString()} cal`)
   if (health.eatenKcal != null) bits.push(`🍽 ${Math.round(health.eatenKcal).toLocaleString()} eaten`)
-  if (health.steps != null) bits.push(`👟 ${Math.round(health.steps).toLocaleString()} steps`)
+  if (health.steps != null) bits.push(`👟 ${Math.round(health.steps).toLocaleString()}`)
   if (!bits.length) return null
   return <p className="small health-line">{bits.join(' · ')}</p>
 }
