@@ -9,6 +9,7 @@ export default function AccountSheet({ onClose }) {
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
   const [step, setStep] = useState('email')
+  const [showCode, setShowCode] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -69,40 +70,51 @@ export default function AccountSheet({ onClose }) {
           </p>
         </form>
       ) : (
-        <form
-          className="stack"
-          onSubmit={(e) => {
-            e.preventDefault()
-            run(async () => {
-              await cloud.verifyCode(email.trim(), code.trim())
-              toast('Signed in. Your plan will sync across devices.')
-              onClose()
-            })
-          }}
-        >
-          <p className="muted" style={{ margin: 0 }}>
-            We sent an email to <b>{email}</b>. Tap the <b>sign-in link</b> in it on this device. If the email shows a
-            6-digit code instead, type it here.
+        <div className="stack">
+          <p style={{ margin: 0 }}>
+            Open the email we sent to <b>{email}</b> on this device and tap the button in it.
           </p>
-          <input
-            className="input code-input"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            placeholder="123456"
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            aria-label="Code"
-            autoFocus
-          />
-          {error && <p className="small" style={{ color: '#c0605a', margin: 0 }}>{error}</p>}
-          <button className="btn primary big" type="submit" disabled={busy || code.length < 6}>
-            {busy ? 'Checking…' : 'Sign in'}
-          </button>
+          <p className="small muted" style={{ margin: 0 }}>
+            The first time it says <b>“Confirm your email”</b>; after that it says <b>“Log in”</b>. Either one signs you in, and
+            this screen updates by itself.
+          </p>
+          {showCode ? (
+            <form
+              className="stack"
+              onSubmit={(e) => {
+                e.preventDefault()
+                run(async () => {
+                  await cloud.verifyCode(email.trim(), code.trim())
+                  toast('Signed in. Your plan will sync across devices.')
+                  onClose()
+                })
+              }}
+            >
+              <input
+                className="input code-input"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="123456"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                aria-label="Code"
+                autoFocus
+              />
+              {error && <p className="small" style={{ color: '#c0605a', margin: 0 }}>{error}</p>}
+              <button className="btn primary big" type="submit" disabled={busy || code.length < 6}>
+                {busy ? 'Checking…' : 'Sign in'}
+              </button>
+            </form>
+          ) : (
+            <button type="button" className="btn ghost small" onClick={() => setShowCode(true)}>
+              My email has a 6-digit code instead
+            </button>
+          )}
           <button type="button" className="btn ghost" onClick={() => setStep('email')}>
             Use a different email
           </button>
-        </form>
+        </div>
       )}
     </Sheet>
   )
