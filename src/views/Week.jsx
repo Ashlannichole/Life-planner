@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/core'
 import { useState } from 'react'
 import ItemMenu from '../components/ItemMenu.jsx'
+import { Garland, Peekers, useDecor } from '../components/ThemeDecor.jsx'
 import { Icon, useToast } from '../components/ui.jsx'
 import { addDays, formatDay, formatMinutes, formatShortDate, formatTime, weekDays } from '../lib/dates.js'
 import { categoryById } from '../lib/model.js'
@@ -55,6 +56,7 @@ function DayCard({ dayKey, today, children, fill, planned, droppable }) {
 
 export default function Week() {
   const { schedule, state, today, actions } = useStore()
+  const holidayTheme = useDecor()
   const toast = useToast()
   const [offset, setOffset] = useState(0)
   const [menuItem, setMenuItem] = useState(null)
@@ -82,6 +84,7 @@ export default function Week() {
 
   return (
     <div className="stack">
+      <Garland theme={holidayTheme} />
       <div className="row spread">
         <div>
           <h1>{offset === 0 ? 'Next 7 days' : 'The week after'}</h1>
@@ -105,6 +108,7 @@ export default function Week() {
         onDragCancel={() => setDragging(null)}
         onDragEnd={onDragEnd}
       >
+        <Peekers theme={holidayTheme} pick={2} />
         <div className="week-grid">
           {days.map((key) => {
             const planned = byKey.get(key)

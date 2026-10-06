@@ -101,3 +101,20 @@ describe('anniversaries', () => {
     expect(theirs.answers.map((x) => x.label)).toContain('Send a card')
   })
 })
+
+describe('your own birthday', () => {
+  const me = { id: 'me', kind: 'birthday', self: true, month: 11, day: 3, year: 1995 }
+
+  it('is called your birthday and offers to plan something for you', () => {
+    const [b] = holidaysOn('2026-11-03', [me])
+    expect(b.name).toBe('Your birthday')
+    expect(b.detail).toBe('you turn 31')
+    const ask = holidayToAsk({ 'halloween-2026': { answer: 'candy' } }, '2026-10-20', [me])
+    expect(ask.name).toBe('Your birthday')
+    expect(ask.answers.map((a) => a.label)).toContain('Treat myself')
+  })
+
+  it('shows St. Patrick’s Day on the calendar', () => {
+    expect(holidaysOn('2027-03-17')[0].name).toBe('St. Patrick’s Day')
+  })
+})

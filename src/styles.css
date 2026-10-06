@@ -1406,3 +1406,227 @@ input.input::-webkit-date-and-time-value {
   color: #3a2a1f;
   vertical-align: middle;
 }
+
+/* ---------- holiday decorations (Plus) */
+
+.app {
+  position: relative;
+  z-index: 1;
+}
+
+.garland {
+  display: flex;
+  height: 30px;
+  margin: 0 -8px;
+  color: color-mix(in srgb, var(--ink) 45%, transparent);
+  pointer-events: none;
+}
+.garland-link {
+  position: relative;
+  flex: 1 1 0;
+}
+.garland-wire {
+  position: absolute;
+  inset: 0 0 auto 0;
+  width: 100%;
+  height: 20px;
+  overflow: visible;
+}
+.garland-charm {
+  position: absolute;
+  left: 50%;
+  top: 9px;
+  width: 18px;
+  height: 18px;
+  transform-origin: 50% 0;
+  transform: translateX(-50%);
+  animation: charm-sway 3.2s ease-in-out infinite alternate;
+}
+.garland.glow .garland-charm {
+  filter: drop-shadow(0 0 4px var(--glow));
+  animation: charm-twinkle 1.8s ease-in-out infinite alternate;
+}
+@keyframes charm-sway {
+  from {
+    transform: translateX(-50%) rotate(-7deg);
+  }
+  to {
+    transform: translateX(-50%) rotate(7deg);
+  }
+}
+@keyframes charm-twinkle {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.5;
+    filter: drop-shadow(0 0 1px var(--glow));
+  }
+}
+
+.peekers {
+  position: relative;
+  margin-bottom: -7px;
+  z-index: 2;
+  pointer-events: none;
+}
+.peek {
+  position: absolute;
+  bottom: 0;
+  animation: peek-bob 2.6s ease-in-out infinite alternate;
+}
+.peek-0 {
+  left: 14px;
+}
+.peek-1 {
+  right: 14px;
+  animation-delay: 1.3s;
+}
+.peekers-1 .peek-0 {
+  left: auto;
+  right: 18px;
+}
+@keyframes peek-bob {
+  from {
+    transform: translateY(2px);
+  }
+  to {
+    transform: translateY(-2px) rotate(-2deg);
+  }
+}
+.critter {
+  overflow: visible;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
+}
+.critter-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: critter-blink 5s infinite;
+}
+.peek-1 .critter-eyes {
+  animation-delay: 2.2s;
+}
+@keyframes critter-blink {
+  0%,
+  93%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+.critter-glow {
+  animation: critter-glow 1.4s ease-in-out infinite alternate;
+}
+@keyframes critter-glow {
+  to {
+    opacity: 0.55;
+  }
+}
+
+.decor-bits {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.decor-bits span {
+  position: absolute;
+  top: -8%;
+  opacity: 0.5;
+  animation: bit-fall linear infinite;
+}
+.decor-bits.rise span {
+  top: auto;
+  bottom: -8%;
+  animation-name: bit-rise;
+}
+.decor-bits.pop span {
+  opacity: 0;
+  animation-name: bit-pop;
+  animation-timing-function: ease-out;
+}
+@keyframes bit-fall {
+  from {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(18px, 56vh) rotate(140deg);
+  }
+  to {
+    transform: translate(-6px, 116vh) rotate(280deg);
+  }
+}
+@keyframes bit-rise {
+  from {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-14px, -56vh);
+  }
+  to {
+    transform: translate(8px, -116vh);
+  }
+}
+@keyframes bit-pop {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  15% {
+    transform: scale(1.25);
+    opacity: 0.75;
+  }
+  45% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  60%,
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.theme-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decor-bits {
+    display: none;
+  }
+}
+.peek-2 {
+  left: calc(50% - 26px);
+  animation-delay: 0.7s;
+}
+.month-peekers {
+  grid-column: 1 / -1;
+}
+.month-peekers .peekers {
+  /* Just the paws on the top edge of the first row, clear of the dates. */
+  margin-bottom: -6px;
+}
+.month-peekers .peek-2 {
+  left: calc(50% - 21px);
+}
+.stack > .peekers {
+  /* Cancel the stack's gap so the paws land on the next card's edge. */
+  margin-top: 4px;
+  margin-bottom: -19px;
+}
+.decor-bits span {
+  opacity: 0.42;
+}

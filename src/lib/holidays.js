@@ -61,6 +61,7 @@ export const HOLIDAYS = [
       { id: 'skip', label: 'Not this year' },
     ],
   },
+  { id: 'st-patricks', name: 'St. Patrick’s Day', emoji: '☘️', date: (y) => key(y, 3, 17) },
   {
     id: 'easter',
     name: 'Easter',
@@ -199,7 +200,7 @@ function specialDayOn(sd, y) {
   const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0
   const day = sd.month === 2 && sd.day === 29 && !leap ? 28 : sd.day
   const years = sd.year ? y - sd.year : null
-  const who = sd.name.trim()
+  const who = (sd.name || '').trim()
   const base = { id: `day-${sd.id}`, specialId: sd.id, kind: sd.kind || 'birthday', date: key(y, sd.month, day), key: `day-${sd.id}-${y}`, askDays: 21 }
   if (base.kind === 'anniversary') {
     // "Our anniversary", or someone else's: "Mom & Dad’s anniversary".
@@ -221,6 +222,26 @@ function specialDayOn(sd, y) {
             { id: 'call', label: 'Call or text on the day', prep: [t(`Wish ${who} a happy anniversary`, 0, 5, 'social')] },
             { id: 'skip', label: 'Nothing this year' },
           ],
+    }
+  }
+  if (sd.self) {
+    // Your own birthday: plan something for yourself, not a gift for someone else.
+    return {
+      ...base,
+      name: 'Your birthday',
+      detail: years && years > 0 ? `you turn ${years}` : null,
+      emoji: '🥳',
+      question: 'Your birthday is coming up! Want to plan something?',
+      answers: [
+        {
+          id: 'party',
+          label: 'Have a party',
+          event: 'My birthday party',
+          prep: [t('Pick a place and invite people', 18, 30, 'social'), t('Order a cake', 7, 15, 'errands'), t('Plan food and drinks', 7, 30, 'kitchen'), t('Grocery run', 2, 60, 'errands')],
+        },
+        { id: 'treat', label: 'Treat myself', prep: [t('Book something fun for your birthday', 10, 15, 'admin'), t('Make a birthday wish list', 14, 15, 'other')] },
+        { id: 'skip', label: 'Keep it low-key' },
+      ],
     }
   }
   return {

@@ -282,6 +282,14 @@ export function StoreProvider({ children }) {
           return { ...s, specialDays: exists ? list.map((x) => (x.id === b.id ? b : x)) : [...list, { ...b, id: b.id || uid() }] }
         })
       },
+      /** Your own birthday ({ month, day, year }), or null to remove it. */
+      setMyBirthday(date) {
+        update((s) => {
+          const others = (s.specialDays || []).filter((d) => !d.self)
+          const me = date && { id: 'self-birthday', kind: 'birthday', self: true, name: '', month: date.month, day: date.day, year: date.year || null }
+          return { ...s, specialDays: me ? [...others, me] : others, settings: { ...s.settings, birthdayAsked: true } }
+        })
+      },
       deleteSpecialDay(id) {
         update((s) => ({ ...s, specialDays: (s.specialDays || []).filter((b) => b.id !== id) }))
       },

@@ -7,15 +7,27 @@ import HolidayCard from '../components/HolidayCard.jsx'
 import ItemMenu from '../components/ItemMenu.jsx'
 import TaskEditor from '../components/TaskEditor.jsx'
 import Plant from '../components/Plant.jsx'
+import BirthdayAsk from '../components/BirthdayAsk.jsx'
+import { Garland, Peekers, useDecor } from '../components/ThemeDecor.jsx'
 import { Icon, useToast } from '../components/ui.jsx'
-import { WEEKDAY_LONG, formatShortDate, formatTime, weekday } from '../lib/dates.js'
+import { WEEKDAY_LONG, addDays, diffDays, formatShortDate, formatTime, weekday } from '../lib/dates.js'
 import { categoryById, durationLabel } from '../lib/model.js'
 import { stageFor, stageProgress } from '../lib/plant.js'
-import { holidaysOn } from '../lib/holidays.js'
+import { holidaysBetween, holidaysOn } from '../lib/holidays.js'
 import { hasPlus } from '../lib/plus.js'
-import { seasonFor } from '../lib/seasons.js'
+import { isMyBirthday, themeFor } from '../lib/seasons.js'
 import { MEAL_SLOTS } from '../lib/meals.js'
 import { useStore } from '../store.jsx'
+
+/** Plus holiday themes: "12 days until Halloween", or "Happy Halloween!" on the day. */
+function countdown(theme, today) {
+  if (!theme?.holidayId) return null
+  const onTheDay = holidaysOn(today).find((h) => !h.specialId)
+  const next = holidaysBetween(today, addDays(today, 70)).find((h) => h.id === theme.holidayId)
+  if (!next || next.date === today) return onTheDay ? `${onTheDay.emoji} Happy ${onTheDay.name}!` : null
+  const days = diffDays(today, next.date)
+  return `${theme.emoji} ${days === 1 ? `${next.name} is tomorrow!` : `${days} days until ${next.name}`}`
+}
 
 function greeting() {
   const h = new Date().getHours()
@@ -94,6 +106,9 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
   const plant = state.plant.current
   const isSunday = weekday(today) === 0
   // Today's holidays (if shown) birthdays and anniversaries (always): labels only, they don't take up time.
+  const holidayTheme = useDecor()
+  const birthday = isMyBirthday(today, state.specialDays)
+  const countdownText = countdown(holidayTheme, today)
   const todaysHolidays = holidaysOn(today, state.specialDays).filter((h) => h.specialId || state.settings.showHolidays !== false)
 
   // Pointer events cover mouse, pen and touch; the grip handle has touch-action: none, so a
@@ -138,13 +153,15 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
 
   return (
     <div className="stack">
+      <Garland theme={holidayTheme} />
       <div className="hero">
         <div>
           <p className="muted small" style={{ margin: 0 }}>
             {WEEKDAY_LONG[weekday(today)]}, {formatShortDate(today)}
-            {state.settings.seasonalTheme && hasPlus(state) ? ` ${seasonFor(today).emoji}` : ''}
+            {state.settings.seasonalTheme && hasPlus(state) ? ` ${themeFor(today, state.specialDays).emoji}` : ''}
           </p>
-          <h1>{greeting()}</h1>
+          <h1>{birthday ? 'Happy birthday! 🎂' : greeting()}</h1>
+          {countdownText && <span className="theme-countdown">{countdownText}</span>}
         </div>
         <button className="mini-plant" onClick={() => onNavigate('garden')} aria-label="Open garden">
           <Plant typeId={plant.typeId} potId={plant.potId} water={plant.water} size={64} />
@@ -162,6 +179,8 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
         </button>
       )}
 
+      <Peekers theme={holidayTheme} />
+      <BirthdayAsk />
       <HolidayCard />
 
       {todaysHolidays.length > 0 && (
