@@ -9,6 +9,7 @@ import TaskEditor from '../components/TaskEditor.jsx'
 import Plant from '../components/Plant.jsx'
 import BirthdayAsk from '../components/BirthdayAsk.jsx'
 import WelcomeBack from '../components/WelcomeBack.jsx'
+import ReminderAsk from '../components/ReminderAsk.jsx'
 import HealthCard, { TodayHealthLine } from '../components/HealthCard.jsx'
 import BrainDumpSheet from '../components/BrainDumpSheet.jsx'
 import { Garland, Peekers, useDecor } from '../components/ThemeDecor.jsx'
@@ -233,6 +234,7 @@ export default function Today({ onFocus, onNavigate, onRecap }) {
       )}
       <WelcomeBack items={items} onFocus={onFocus} />
       <HealthCard day={day} />
+      <ReminderAsk />
       <BirthdayAsk />
       <HolidayCard />
 

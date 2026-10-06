@@ -21,7 +21,7 @@ export const FREE_FEATURES = [
   ['🌙', 'Low-energy days', 'One tap for a lighter day'],
   ['👋', 'Welcome back', 'Away a while? A fresh start, never a pile'],
   ['☁️', 'Sync', 'Phone, iPad and computer'],
-  ['🔔', 'Gentle reminders', 'A morning check-in, an evening nudge, a heads-up before events (iPhone app)'],
+  ['🔔', 'Gentle reminders', 'A morning check-in, an afternoon nudge if nothing’s done yet, a heads-up before events (iPhone app)'],
 ]
 
 export const PLUS_FEATURES = [

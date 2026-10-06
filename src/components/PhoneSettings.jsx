@@ -28,13 +28,7 @@ export default function PhoneSettings() {
       sendNative({ type: 'notifications:schedule', items: [] })
       return
     }
-    const answer = await askNative({ type: 'notifications:enable' }, 'notifications:status')
-    if (answer?.granted) {
-      setDeviceSettings({ reminders: true })
-      toast('🔔 Reminders on. Gentle ones, promise.')
-    } else {
-      toast('Notifications are off for Sprout. Turn them on in the iPhone Settings app.')
-    }
+    toast(await turnOnReminders())
   }
 
   const connectHealth = async () => {
@@ -59,7 +53,7 @@ export default function PhoneSettings() {
             <span>
               <b>Gentle reminders</b>
               <br />
-              <span className="small muted">A morning check-in, an evening nudge, and a heads-up before events. Never “overdue”.</span>
+              <span className="small muted">A morning check-in, an afternoon nudge if nothing’s done yet, and a heads-up before events. Never “overdue”.</span>
             </span>
             <Toggle on={!!device.reminders} onChange={toggleReminders} label="Reminders" />
           </div>
@@ -69,6 +63,25 @@ export default function PhoneSettings() {
                 <label htmlFor="rem-morning">🌱 Morning check-in</label>
                 <input id="rem-morning" className="input" type="time" style={{ maxWidth: 130 }} value={prefs.morning} onChange={(e) => setPrefs({ morning: e.target.value || '08:30' })} />
               </div>
+              <div className="row spread">
+                <span>✨ Afternoon nudge, only if nothing’s done yet</span>
+                <Toggle on={prefs.afternoon} onChange={(afternoon) => setPrefs({ afternoon })} label="Afternoon nudge" />
+              </div>
+              {prefs.afternoon && (
+                <div className="row spread">
+                  <label htmlFor="rem-afternoon" className="small muted">
+                    Afternoon time
+                  </label>
+                  <input
+                    id="rem-afternoon"
+                    className="input"
+                    type="time"
+                    style={{ maxWidth: 130 }}
+                    value={prefs.afternoonTime}
+                    onChange={(e) => setPrefs({ afternoonTime: e.target.value || '14:30' })}
+                  />
+                </div>
+              )}
               <div className="row spread">
                 <span>🌙 Evening nudge (night routines)</span>
                 <Toggle on={prefs.evening} onChange={(evening) => setPrefs({ evening })} label="Evening nudge" />
@@ -131,4 +144,13 @@ export function HealthSummary({ health }) {
   if (health.steps != null) bits.push(`👟 ${Math.round(health.steps).toLocaleString()}`)
   if (!bits.length) return null
   return <p className="small health-line">{bits.join(' · ')}</p>
+}
+
+/** Ask the phone for permission and switch reminders on. Returns a message to show. */
+export async function turnOnReminders() {
+  const answer = await askNative({ type: 'notifications:enable' }, 'notifications:status')
+  setDeviceSettings({ remindersAsked: true })
+  if (!answer?.granted) return 'Notifications are off for Sprout. Turn them on in the iPhone Settings app.'
+  setDeviceSettings({ reminders: true })
+  return '🔔 Reminders on. Gentle ones, promise.'
 }
