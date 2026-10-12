@@ -175,6 +175,7 @@ export function initialState() {
     energy: {},
     workouts: {},
     milestones: {},
+    wins: [], // the wins jar: wins people add themselves { id, date, text }
     unlockedThemes: ['sage'],
     planSnapshot: null,
   }

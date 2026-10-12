@@ -15,6 +15,8 @@ export const PLUS_LABEL = PLUS_FREE_DURING_BETA ? 'Plus · free in beta' : 'Plus
 export const FREE_FEATURES = [
   ['🗓️', 'Your plan, made for you', 'Tasks, chores and routines placed on the right days automatically'],
   ['🌱', 'A plant that grows', 'Every finished task waters it. It never wilts.'],
+  ['🫙', 'Wins jar', 'Everything you finish goes in. Shake it on a hard day.'],
+  ['📱', 'Home-screen widget', 'Your next tiny thing and your plant, without opening the app (iPhone app)'],
   ['🎯', 'Focus mode', 'One thing at a time, with a timer'],
   ['🧳', 'Events & trips', 'Prep and packing planned backward from the day'],
   ['📅', 'Month calendar', 'Events, holidays, birthdays and anniversaries'],
@@ -31,5 +33,6 @@ export const PLUS_FEATURES = [
   ['🧠', 'Dump it all at once', 'Type everything on your mind; days and times are picked out for you'],
   ['❤️', 'Apple Health', 'Oura or Apple Watch sleep suggests lighter days; calories in Meals'],
   ['🦃', 'Holiday prep', 'Answer one question; the prep gets planned'],
+  ['🕸️', 'Seasonal plants', 'Rare plants that only turn up in their month: poisonous ones in October, holly in December'],
   ['🎃', 'Holiday themes', 'Twinkly lights, cute critters and a party on your birthday'],
 ]

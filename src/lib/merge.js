@@ -102,7 +102,7 @@ function mergePlant(base, local, remote) {
   }
 }
 
-const ID_LISTS = ['tasks', 'completions', 'events', 'recipes', 'templates', 'prepTemplates', 'packingLists', 'specialDays']
+const ID_LISTS = ['tasks', 'completions', 'events', 'recipes', 'templates', 'prepTemplates', 'packingLists', 'specialDays', 'wins']
 const MAPS = ['pins', 'deferrals', 'dayOrder', 'mealPlan', 'energy', 'milestones', 'settings', 'holidayPlans', 'health']
 
 /** Fields kept per device and never synced. */

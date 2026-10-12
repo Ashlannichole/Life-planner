@@ -1,5 +1,7 @@
 import { THEMES } from '../lib/milestones.js'
+import { todayKey } from '../lib/dates.js'
 import { plantType, potType } from '../lib/plant.js'
+import { seasonFor } from '../lib/seasons.js'
 import { useStore } from '../store.jsx'
 import Plant from './Plant.jsx'
 
@@ -45,8 +47,9 @@ export default function Celebration({ onGarden }) {
       ) : (
         <Plant typeId={r.id} potId="terracotta" stage={5} size={110} />
       )
-    title = r.rare ? '✨ A rare surprise!' : 'A little surprise'
+    title = r.seasonal ? `${seasonFor(todayKey()).emoji} A seasonal find!` : r.rare ? '✨ A rare surprise!' : 'A little surprise'
     body = `You unlocked ${r.kind === 'pot' ? `the ${potType(r.id).name.toLowerCase()} pot` : `${plantType(r.id).name} seeds`}.`
+    if (r.seasonal) body += ` ${plantType(r.id).note && r.kind === 'plant' ? plantType(r.id).note : 'Only found this time of year, and it’s yours to keep.'}`
   }
 
   return (
