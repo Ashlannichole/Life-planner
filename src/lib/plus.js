@@ -1,11 +1,21 @@
-// "Plus": the paid tier. There's no payment yet (in the iPhone app it has to go through
-// Apple's in-app purchase), so Plus features are free during the beta. When payments
-// arrive, only `hasPlus` changes; every Plus feature already asks it.
+// "Plus": the paid tier, bought in the iPhone app through Apple in-app purchase
+// (RevenueCat; see mobile/purchases.js). The App Store's answer is saved on the account
+// (`state.plus`), so Plus also works on the website and other devices once bought.
+//
+// While PLUS_FREE_DURING_BETA is true everyone gets Plus and buying is only for testing the
+// purchase flow (TestFlight purchases are free). Set it to false for the App Store launch.
 
 export const PLUS_FREE_DURING_BETA = true
 
+/** Bought and not expired. */
+export function plusActive(state, now = Date.now()) {
+  const p = state?.plus
+  if (!p?.active) return false
+  return !p.expires || new Date(p.expires).getTime() > now
+}
+
 export function hasPlus(state) {
-  return PLUS_FREE_DURING_BETA || !!state?.plus?.active
+  return PLUS_FREE_DURING_BETA || plusActive(state)
 }
 
 export const PLUS_LABEL = PLUS_FREE_DURING_BETA ? 'Plus · free in beta' : 'Plus'

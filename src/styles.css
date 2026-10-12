@@ -1890,3 +1890,27 @@ body {
     animation: none;
   }
 }
+
+/* ---- Plus plans */
+.plan-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+.plan-btn > span:last-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+.plan-trial,
+.plan-sub {
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.85;
+}
+.plan-legal a {
+  color: var(--accent);
+}

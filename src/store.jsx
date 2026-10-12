@@ -504,6 +504,14 @@ export function StoreProvider({ children }) {
           return { ...s, health: Object.fromEntries(keep) }
         })
       },
+      /** Sprout Plus as the App Store sees it (bought in the iPhone app; follows the account). */
+      setPlusStatus(status) {
+        const s = stateRef.current
+        const next = { active: !!status.active, expires: status.expires || null, willRenew: !!status.willRenew, productId: status.productId || null, sandbox: !!status.sandbox, source: 'apple' }
+        const { checkedAt, ...before } = s.plus || {}
+        if (JSON.stringify(before) === JSON.stringify(next) && Date.now() - (checkedAt || 0) < 6 * 3600 * 1000) return
+        commit({ ...s, plus: { ...next, checkedAt: Date.now() } })
+      },
       dismissWelcomeBack() {
         update((s) => ({ ...s, settings: { ...s.settings, welcomeBack: null } }))
       },

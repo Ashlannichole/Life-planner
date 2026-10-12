@@ -175,6 +175,7 @@ export function initialState() {
     energy: {},
     workouts: {},
     milestones: {},
+    plus: null, // Sprout Plus from the App Store: { active, expires, willRenew, productId, sandbox, source, checkedAt }
     wins: [], // the wins jar: wins people add themselves { id, date, text }
     unlockedThemes: ['sage'],
     planSnapshot: null,
