@@ -1804,3 +1804,113 @@ body {
   margin: 6px 0 0;
   color: var(--muted);
 }
+
+/* ---- Seasonal finds (Plus) */
+.seasonal-row {
+  display: flex;
+  gap: 10px;
+  justify-content: space-around;
+}
+.seasonal-find {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+/* Not found yet: a mystery silhouette. */
+.seasonal-find.hidden .plant-svg {
+  filter: brightness(0);
+  opacity: 0.18;
+}
+@media (prefers-color-scheme: dark) {
+  .seasonal-find.hidden .plant-svg {
+    filter: brightness(0) invert(1);
+  }
+}
+.tiny {
+  font-size: 0.72rem;
+}
+
+/* ---- Wins jar */
+.wins-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.wins-jar .jar-glass {
+  fill: color-mix(in srgb, var(--surface-2) 60%, transparent);
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-opacity: 0.5;
+}
+.wins-jar .jar-lid {
+  fill: var(--accent);
+}
+.wins-jar .jar-shine {
+  stroke: #fff;
+  stroke-opacity: 0.55;
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+}
+.wins-jar.shaking {
+  animation: jar-shake 0.65s ease-in-out;
+  transform-origin: 50% 90%;
+}
+@keyframes jar-shake {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(-12deg); }
+  35% { transform: rotate(10deg); }
+  55% { transform: rotate(-8deg); }
+  75% { transform: rotate(5deg); }
+}
+.win-slip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff8dc;
+  color: #4a3f22;
+  box-shadow: var(--shadow);
+  transform: rotate(-1.5deg);
+  animation: slip-in 0.35s ease-out;
+}
+.win-slip .muted {
+  color: #8a7a52;
+}
+@keyframes slip-in {
+  from { transform: translateY(-14px) rotate(-6deg); opacity: 0; }
+  to { transform: rotate(-1.5deg); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wins-jar.shaking,
+  .win-slip {
+    animation: none;
+  }
+}
+
+/* ---- Plus plans */
+.plan-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+.plan-btn > span:last-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+.plan-trial,
+.plan-sub {
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.85;
+}
+.plan-legal a {
+  color: var(--accent);
+}

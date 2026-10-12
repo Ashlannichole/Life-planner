@@ -43,6 +43,42 @@ The app adds two phone-only features to the website:
 
 These are native features, so after changing them you need a new build. Run the same TestFlight command again; it's all set up in `app.json`.
 
+## Home-screen widget
+
+The widget (`widgets.js`, built with `expo-widgets`) shows your next tiny thing, how many you've done today and your plant. It comes in small, medium and large sizes for the home screen, plus lock-screen versions. The website sends it fresh data whenever the plan changes, and tomorrow's plan as well so it switches over at midnight on its own.
+
+The widget is a separate piece of the app, so the first build after adding it asks one extra question: **Generate a new provisioning profile for `com.ashlan.sprout.widgets`?** Answer **Yes**. The app and the widget share data through the App Group `group.com.ashlan.sprout`, which EAS sets up for you.
+
+To add it on the phone, long-press the home screen, tap **Edit → Add Widget**, then pick **Sprout**. For the lock screen, long-press the lock screen and tap **Customize**.
+
+## Sprout Plus (in-app purchase through RevenueCat)
+
+Plus is sold as an Apple subscription. `purchases.js` talks to the App Store through RevenueCat, and purchases are tied to the Sprout account so Plus also works on the website. While `PLUS_FREE_DURING_BETA` (in `src/lib/plus.js`) is `true`, everyone gets Plus and buying is just for testing. Purchases made in TestFlight are free.
+
+One-time setup. Do all of this in each service's own website; no keys go in the code or in chat.
+
+1. **App Store Connect → Business (Agreements, Tax, and Banking).** Accept the **Paid Apps** agreement and add your bank and tax info. Subscriptions won't load until this agreement is active, even for testing.
+2. **App Store Connect → Sprout → Monetization → Subscriptions.**
+   - Create a subscription group called **Sprout Plus**.
+   - Add two subscriptions:
+     - `sprout_plus_monthly`: 1 month, $3.99.
+     - `sprout_plus_yearly`: 1 year, $24.99, with an introductory offer of **1 week free**.
+   - Fill in the display name, the description and a review screenshot (a screenshot of the Plus page is fine) until each one says **Ready to Submit**.
+3. **App Store Connect → Users and Access → Integrations → In-App Purchase.** Generate a key and download the `.p8` file. Note the Key ID and the Issuer ID shown on that page.
+4. **RevenueCat** (app.revenuecat.com, free to start):
+   - Create a project called **Sprout**.
+   - Add an **App Store** app with bundle ID `com.ashlan.sprout`, and upload the `.p8` file with its Key ID and Issuer ID.
+   - **Products:** add `sprout_plus_monthly` and `sprout_plus_yearly`.
+   - **Entitlements:** create one with the identifier `plus`, and attach both products.
+   - **Offerings:** make sure the **default** offering is current, with a **Monthly** package (`sprout_plus_monthly`) and an **Annual** package (`sprout_plus_yearly`).
+5. **Copy RevenueCat's public Apple API key** (Project settings → API keys; it starts with `appl_`). Then go to **expo.dev → Sprout → Environment variables** and add `EXPO_PUBLIC_REVENUECAT_IOS_KEY` with that value, for the **production** environment. EAS bakes it into the next build. Without it, the app just doesn't show the plans.
+6. Build again with the usual command. In TestFlight, open **Settings → See everything in Plus** and pick a plan. Apple's sheet says **[Environment: Sandbox]** and doesn't charge. Test subscriptions renew quickly (about once a day) and stop after a few renewals; that's normal.
+
+When you're ready for the App Store:
+- Set `PLUS_FREE_DURING_BETA` to `false`.
+- Add both subscriptions to the version you submit for review.
+- Use `https://life-planner-dun-chi.vercel.app/privacy.html` as the Privacy Policy URL.
+
 ## Google Play later
 
 ```bash
@@ -52,7 +88,12 @@ npx eas-cli@latest submit --platform android
 
 ## Before the public App Store release
 
-Apple can turn down apps that are "just a website". Before submitting for review, add a few app-only touches:
-- Notifications
-- Widgets
-- Home-screen quick actions
+Apple can turn down apps that are "just a website". Sprout now has several app-only touches:
+- Reminders
+- Apple Health
+- Home-screen and lock-screen widgets
+- In-app purchase
+
+For App Review, also:
+- Add a demo account in App Review Information.
+- Fill in App Privacy using the privacy page: Sprout collects the plan and the health summaries, linked to the account, not used for tracking.

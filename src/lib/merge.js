@@ -102,7 +102,7 @@ function mergePlant(base, local, remote) {
   }
 }
 
-const ID_LISTS = ['tasks', 'completions', 'events', 'recipes', 'templates', 'prepTemplates', 'packingLists', 'specialDays']
+const ID_LISTS = ['tasks', 'completions', 'events', 'recipes', 'templates', 'prepTemplates', 'packingLists', 'specialDays', 'wins']
 const MAPS = ['pins', 'deferrals', 'dayOrder', 'mealPlan', 'energy', 'milestones', 'settings', 'holidayPlans', 'health']
 
 /** Fields kept per device and never synced. */
@@ -129,6 +129,8 @@ export function mergeState(base, local, remote) {
   }
   out.plant = mergePlant(base.plant, local.plant, remote.plant)
   out.unlockedThemes = union(local.unlockedThemes, remote.unlockedThemes)
+  // Plus status: whichever device heard from the App Store most recently.
+  out.plus = (remote.plus?.checkedAt || 0) > (local.plus?.checkedAt || 0) ? remote.plus : local.plus || remote.plus || null
   out.onboarded = !!(local.onboarded || remote.onboarded)
   out.activeTemplateId = mergeValue(base.activeTemplateId, local.activeTemplateId, remote.activeTemplateId)
   // Never point at a schedule that no longer exists.

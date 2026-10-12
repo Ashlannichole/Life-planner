@@ -6,10 +6,12 @@ import { addPush, planSnapshot, rollPushes, sameSnapshot } from './lib/compost.j
 import { hasTask, tasksFromLibrary } from './lib/library.js'
 import { findShoppingTask, groceryList, suggestMeals } from './lib/meals.js'
 import { applyMilestones } from './lib/milestones.js'
-import { unwater, water } from './lib/plant.js'
+import { applySeasonalFinds, unwater, water } from './lib/plant.js'
+import { hasPlus } from './lib/plus.js'
 import { fitDaysBefore, makePrepTasks, reschedulePrepTasks } from './lib/prep.js'
 import { buildSchedule } from './lib/scheduler.js'
 import { markOpened } from './lib/welcome.js'
+import { makeWin } from './lib/wins.js'
 import { playChime, playCheck } from './lib/sound.js'
 import { housekeep, loadState, migrate, saveState } from './lib/storage.js'
 
@@ -138,9 +140,15 @@ export function StoreProvider({ children }) {
           },
           today,
         )
-        commit(next)
+        // Plus: this month's seasonal plants turn up after enough finished things.
+        const seasonal = hasPlus(next) ? applySeasonalFinds(next, today) : { plant: next.plant, found: [] }
+        commit({ ...next, plant: seasonal.plant })
         sound(playCheck)
-        celebrate([...plantEvents(events, plant), ...reached.map((m) => ({ kind: 'milestone', milestone: m }))])
+        celebrate([
+          ...plantEvents(events, plant),
+          ...reached.map((m) => ({ kind: 'milestone', milestone: m })),
+          ...seasonal.found.map((reward) => ({ kind: 'reward', reward })),
+        ])
         return completion
       },
       uncomplete(completionId) {
@@ -153,6 +161,14 @@ export function StoreProvider({ children }) {
           completions: s.completions.filter((x) => x.id !== completionId),
           tasks: s.tasks.map((t) => (t.id === c.taskId && t.repeat === 'none' ? { ...t, doneAt: null } : t)),
         })
+      },
+      // ---- wins jar
+      addWin(text) {
+        if (!text.trim()) return
+        update((s) => ({ ...s, wins: [...(s.wins || []), makeWin(text, today)] }))
+      },
+      deleteWin(id) {
+        update((s) => ({ ...s, wins: (s.wins || []).filter((w) => w.id !== id) }))
       },
       dismissCelebration() {
         setCelebrations((c) => c.slice(1))
@@ -487,6 +503,14 @@ export function StoreProvider({ children }) {
             .slice(0, 30)
           return { ...s, health: Object.fromEntries(keep) }
         })
+      },
+      /** Sprout Plus as the App Store sees it (bought in the iPhone app; follows the account). */
+      setPlusStatus(status) {
+        const s = stateRef.current
+        const next = { active: !!status.active, expires: status.expires || null, willRenew: !!status.willRenew, productId: status.productId || null, sandbox: !!status.sandbox, source: 'apple' }
+        const { checkedAt, ...before } = s.plus || {}
+        if (JSON.stringify(before) === JSON.stringify(next) && Date.now() - (checkedAt || 0) < 6 * 3600 * 1000) return
+        commit({ ...s, plus: { ...next, checkedAt: Date.now() } })
       },
       dismissWelcomeBack() {
         update((s) => ({ ...s, settings: { ...s.settings, welcomeBack: null } }))
