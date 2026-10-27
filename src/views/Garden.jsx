@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Plant from '../components/Plant.jsx'
 import PlantMemory from '../components/PlantMemory.jsx'
+import SeasonalFinds, { SeasonalCollection } from '../components/SeasonalFinds.jsx'
+import WinsJar from '../components/WinsJar.jsx'
 import { formatShortDate } from '../lib/dates.js'
 import { BLOOM_AT, PLANT_TYPES, POTS, STAGES, plantType, stageFor, stageIndex, stageProgress } from '../lib/plant.js'
 import { MILESTONES, STAT_LABELS, upcoming } from '../lib/milestones.js'
@@ -44,6 +46,10 @@ export default function Garden({ onRecap }) {
         </button>
       </div>
 
+      <WinsJar />
+
+      <SeasonalFinds />
+
       {(canSwitchType || current.needsPick) && (
         <div className="section">
           <p className="section-title">{current.needsPick ? 'Pick your next seed' : 'Seed'}</p>
@@ -61,7 +67,7 @@ export default function Garden({ onRecap }) {
       <div className="section">
         <p className="section-title">Pot</p>
         <div className="picker">
-          {POTS.map((p) => {
+          {POTS.filter((p) => !p.season || unlockedPots.includes(p.id)).map((p) => {
             const unlocked = unlockedPots.includes(p.id)
             return (
               <button
@@ -126,7 +132,7 @@ export default function Garden({ onRecap }) {
       <div className="section">
         <p className="section-title">Seed collection</p>
         <div className="garden-grid">
-          {PLANT_TYPES.map((p) => {
+          {PLANT_TYPES.filter((p) => !p.season).map((p) => {
             const unlocked = unlockedPlants.includes(p.id)
             return (
               <div key={p.id} className={`garden-cell ${unlocked ? '' : 'locked'}`}>
@@ -136,6 +142,11 @@ export default function Garden({ onRecap }) {
             )
           })}
         </div>
+      </div>
+
+      <div className="section">
+        <p className="section-title">Seasonal plants</p>
+        <SeasonalCollection />
       </div>
 
       {memory && <PlantMemory plant={memory.plant} current={memory.current} onClose={() => setMemory(null)} />}

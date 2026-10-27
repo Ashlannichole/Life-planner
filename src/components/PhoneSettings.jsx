@@ -3,6 +3,7 @@ import { askNative, deviceSettings, hasNativeFeature, sendNative, setDeviceSetti
 import { hasPlus, PLUS_LABEL } from '../lib/plus.js'
 import { REMINDER_DEFAULTS } from '../lib/reminders.js'
 import { useStore } from '../store.jsx'
+import CalendarSettings from './CalendarSettings.jsx'
 import { Toggle, useToast } from './ui.jsx'
 
 /** Settings that only exist in the iPhone app: reminders (free) and Apple Health (Plus). */
@@ -102,6 +103,8 @@ export default function PhoneSettings() {
           )}
         </div>
       </div>
+
+      <CalendarSettings device={device} />
 
       {hasNativeFeature('health') && (
         <div className="section">

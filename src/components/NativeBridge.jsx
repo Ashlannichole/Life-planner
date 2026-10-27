@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { deviceSettings, nativeApp, onNative, sendNative } from '../lib/native.js'
+import { deviceSettings, hasNativeFeature, nativeApp, onNative, sendNative } from '../lib/native.js'
 import { buildReminders } from '../lib/reminders.js'
+import { widgetData } from '../lib/widget.js'
+import { calendarWindow, sproutEventsToWrite } from '../lib/calendar.js'
 import { useStore } from '../store.jsx'
 
 /**
@@ -8,7 +10,7 @@ import { useStore } from '../store.jsx'
  * Apple Health numbers. Renders nothing; does nothing in a normal browser.
  */
 export default function NativeBridge() {
-  const { state, schedule, actions } = useStore()
+  const { state, schedule, today, actions, cloud } = useStore()
   const [device, setDevice] = useState(deviceSettings)
 
   useEffect(() => {
@@ -46,6 +48,52 @@ export default function NativeBridge() {
   useEffect(() => {
     if (device.health) sendNative({ type: 'health:refresh' })
   }, [device.health])
+
+  // The home-screen widget: today's next few things, what's done, and the plant.
+  const widget = useMemo(() => JSON.stringify(widgetData(state, schedule, today)), [state, schedule, today])
+  useEffect(() => {
+    if (!hasNativeFeature('widget')) return
+    const t = setTimeout(() => sendNative({ type: 'widget:update', ...JSON.parse(widget) }), 800)
+    return () => clearTimeout(t)
+  }, [widget])
+
+  // Calendar: write Sprout's events to the phone's "Sprout" calendar and read the chosen
+  // calendars back, whenever Sprout's events change and each time the app comes to the front.
+  const calendar = device.calendar
+  const calendarSync = useMemo(() => {
+    if (!calendar?.on) return null
+    const window = calendarWindow(today)
+    return JSON.stringify({
+      type: 'calendar:sync',
+      calendarIds: calendar.ids || [],
+      write: calendar.write !== false,
+      sproutEvents: calendar.write !== false ? sproutEventsToWrite(state, window) : [],
+      ...window,
+    })
+  }, [calendar, state, today])
+  useEffect(() => {
+    if (!hasNativeFeature('calendar') || !calendarSync) return
+    const t = setTimeout(() => sendNative(JSON.parse(calendarSync)), 1200)
+    const stop = onNative((msg) => {
+      if (msg.type === 'calendar:events') actions.setCalendarEvents(msg.events)
+      if (msg.type === 'foreground') sendNative(JSON.parse(calendarSync))
+    })
+    return () => {
+      clearTimeout(t)
+      stop()
+    }
+  }, [calendarSync, actions])
+
+  // Sprout Plus bought in the app: tie it to the account and keep the status in step.
+  const userId = cloud.user?.id || null
+  useEffect(() => {
+    if (!hasNativeFeature('purchases')) return
+    const stop = onNative((msg) => {
+      if (msg.type === 'plus:status' && msg.status) actions.setPlusStatus(msg.status)
+    })
+    sendNative({ type: 'plus:hello', userId })
+    return stop
+  }, [userId, actions])
 
   return null
 }

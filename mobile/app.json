@@ -49,6 +49,36 @@
           "NSHealthUpdateUsageDescription": "Sprout doesn't save anything to Apple Health. It only reads your sleep, heart rate variability, steps and calories to plan lighter days when you need them.",
           "background": false
         }
+      ],
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "com.ashlan.sprout.widgets",
+          "groupIdentifier": "group.com.ashlan.sprout",
+          "widgets": [
+            {
+              "name": "SproutToday",
+              "displayName": "Sprout",
+              "description": "Your next tiny thing, what's done today, and your plant.",
+              "supportedFamilies": [
+                "systemSmall",
+                "systemMedium",
+                "systemLarge",
+                "accessoryRectangular",
+                "accessoryInline",
+                "accessoryCircular"
+              ],
+              "contentMarginsDisabled": false
+            }
+          ]
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Sprout shows events from your calendars in your plan and plans around them, and can add your Sprout events to a \"Sprout\" calendar.",
+          "remindersPermission": false
+        }
       ]
     ]
   }

@@ -4,6 +4,9 @@ import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { WebView } from 'react-native-webview'
 import { connectHealth, enableNotifications, healthAvailable, notificationStatus, readHealth, scheduleReminders } from './native'
+import { buyPlus, manageSubscription, plusOfferings, purchasesAvailable, restorePlus, startPurchases } from './purchases'
+import { calendarStatus, enableCalendar, listCalendars, readCalendarEvents, writeSproutEvents } from './calendar'
+import { updateWidget } from './widgets'
 
 // The live Sprout web app. The app's own CSS handles the notch and home bar on iOS.
 const SPROUT_URL = 'https://life-planner-dun-chi.vercel.app'
@@ -19,7 +22,13 @@ const COLORS = {
 const NATIVE_INFO = `window.SproutNative = ${JSON.stringify({
   version: 1,
   platform: Platform.OS,
-  features: ['notifications', ...(healthAvailable() ? ['health'] : [])],
+  features: [
+    'notifications',
+    'calendar',
+    ...(healthAvailable() ? ['health'] : []),
+    ...(Platform.OS === 'ios' ? ['widget'] : []),
+    ...(purchasesAvailable() ? ['purchases'] : []),
+  ],
 })}; true;`
 
 /** Stays inside Sprout; anything else (links in notes, Supabase pages) opens in the phone's browser. */
@@ -86,6 +95,44 @@ function Sprout() {
             break
           case 'health:refresh':
             reply({ type: 'health:data', data: await readHealth() })
+            break
+          // Two-way calendar sync
+          case 'calendar:status':
+            reply({ type: 'calendar:status', granted: await calendarStatus() })
+            break
+          case 'calendar:enable':
+            reply({ type: 'calendar:status', granted: await enableCalendar() })
+            break
+          case 'calendar:list':
+            reply({ type: 'calendar:list', calendars: await listCalendars() })
+            break
+          case 'calendar:sync': {
+            // Write Sprout's events first, then read everything else back.
+            const written = msg.write ? await writeSproutEvents(msg.sproutEvents || [], msg.from, msg.to) : 0
+            const events = await readCalendarEvents(msg.calendarIds || [], msg.from, msg.to)
+            reply({ type: 'calendar:events', events, from: msg.from, to: msg.to, written })
+            break
+          }
+          case 'widget:update':
+            updateWidget(msg)
+            break
+          // Sprout Plus (App Store, through RevenueCat)
+          case 'plus:hello':
+            reply({ type: 'plus:status', status: await startPurchases(msg.userId, (status) => reply({ type: 'plus:status', status })) })
+            break
+          case 'plus:offerings':
+            reply({ type: 'plus:offerings', packages: await plusOfferings() })
+            break
+          case 'plus:buy': {
+            const result = await buyPlus(msg.packageId)
+            reply(result.cancelled ? { type: 'plus:cancelled' } : { type: 'plus:status', status: result, bought: true })
+            break
+          }
+          case 'plus:restore':
+            reply({ type: 'plus:status', status: await restorePlus(), restored: true })
+            break
+          case 'plus:manage':
+            await manageSubscription()
             break
         }
       } catch (err) {
