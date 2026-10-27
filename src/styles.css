@@ -1914,3 +1914,11 @@ body {
 .plan-legal a {
   color: var(--accent);
 }
+
+/* ---- Calendar settings */
+.cal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}

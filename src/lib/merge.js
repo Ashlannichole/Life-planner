@@ -129,6 +129,8 @@ export function mergeState(base, local, remote) {
   }
   out.plant = mergePlant(base.plant, local.plant, remote.plant)
   out.unlockedThemes = union(local.unlockedThemes, remote.unlockedThemes)
+  // Calendar events: whichever phone read its calendar most recently.
+  out.calendar = (remote.calendar?.at || 0) > (local.calendar?.at || 0) ? remote.calendar : local.calendar || remote.calendar || null
   // Plus status: whichever device heard from the App Store most recently.
   out.plus = (remote.plus?.checkedAt || 0) > (local.plus?.checkedAt || 0) ? remote.plus : local.plus || remote.plus || null
   out.onboarded = !!(local.onboarded || remote.onboarded)

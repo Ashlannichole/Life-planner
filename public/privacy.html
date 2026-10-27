@@ -54,7 +54,7 @@
   <body>
     <main>
       <h1>🌱 Sprout privacy</h1>
-      <p class="muted">Last updated October 12, 2026</p>
+      <p class="muted">Last updated October 27, 2026</p>
 
       <p>Sprout is a planner. It keeps what you put into it so it can plan your days, and it doesn't sell, share or advertise with any of it.</p>
 
@@ -63,6 +63,11 @@
         <li>Your plan: tasks, routines, events, meals, check-offs, your garden and your wins jar.</li>
         <li>Your settings, and birthdays or anniversaries you add.</li>
         <li>
+          If you turn on calendar sync in the iPhone app: the title, date and times of events from the calendars you choose (from a week ago
+          to three months ahead), so your plan can work around them. Sprout also adds its own events to a calendar called "Sprout" on your
+          phone; it never changes or deletes anything in your other calendars.
+        </li>
+        <li>
           If you connect Apple Health in the iPhone app: a daily summary of sleep, heart rate variability, resting heart rate, steps and
           calories. Sprout only reads these, never writes to Apple Health, and uses them only to suggest lighter days and show your numbers.
         </li>
@@ -70,7 +75,7 @@
 
       <h2>Where it's stored</h2>
       <p>
-        Everything is saved on your device. If you create an account, your plan (including those daily Apple Health summaries) is also saved
+        Everything is saved on your device. If you create an account, your plan (including those daily Apple Health summaries and any synced calendar events) is also saved
         to your account so it syncs between your devices. Accounts are run on Supabase, which stores the data for us and doesn't use it for
         anything else.
       </p>
@@ -88,7 +93,7 @@
       <ul>
         <li>No ads, and no ad or tracking SDKs.</li>
         <li>No selling or sharing your data.</li>
-        <li>No reading your contacts, photos or location.</li>
+        <li>No reading your contacts, photos or location, and only the calendars you choose.</li>
       </ul>
 
       <h2>Deleting your data</h2>

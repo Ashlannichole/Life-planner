@@ -12,6 +12,7 @@ import { fitDaysBefore, makePrepTasks, reschedulePrepTasks } from './lib/prep.js
 import { buildSchedule } from './lib/scheduler.js'
 import { markOpened } from './lib/welcome.js'
 import { makeWin } from './lib/wins.js'
+import { applyCalendarEvents, clearCalendarEvents } from './lib/calendar.js'
 import { playChime, playCheck } from './lib/sound.js'
 import { housekeep, loadState, migrate, saveState } from './lib/storage.js'
 
@@ -503,6 +504,17 @@ export function StoreProvider({ children }) {
             .slice(0, 30)
           return { ...s, health: Object.fromEntries(keep) }
         })
+      },
+      /** A fresh read of the phone's calendars (only saved when something changed). */
+      setCalendarEvents(events) {
+        const s = stateRef.current
+        const next = applyCalendarEvents(s, events)
+        if (next !== s) commit(next)
+      },
+      clearCalendarEvents() {
+        const s = stateRef.current
+        const next = clearCalendarEvents(s)
+        if (next !== s) commit(next)
       },
       /** Sprout Plus as the App Store sees it (bought in the iPhone app; follows the account). */
       setPlusStatus(status) {

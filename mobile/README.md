@@ -51,6 +51,15 @@ The widget is a separate piece of the app, so the first build after adding it as
 
 To add it on the phone, long-press the home screen, tap **Edit → Add Widget**, then pick **Sprout**. For the lock screen, long-press the lock screen and tap **Customize**.
 
+## Calendar sync
+
+`calendar.js` (with `expo-calendar`) syncs both ways with the phone's Calendar app, so it covers every account on the phone (iCloud, Google, Outlook).
+
+- **Calendar → Sprout:** events from the calendars you pick (Settings → Calendar) show up in Sprout, and the plan works around timed ones. All-day entries show up but don't clear the day. They're read-only in Sprout; change them in Calendar.
+- **Sprout → Calendar:** Sprout's events go into a calendar called **Sprout**, and update or disappear there when they change in Sprout. Sprout never touches your other calendars.
+
+It syncs from a week back to three months ahead, each time the app opens and whenever Sprout's events change. Calendar access is asked for the first time you switch it on.
+
 ## Sprout Plus (in-app purchase through RevenueCat)
 
 Plus is sold as an Apple subscription. `purchases.js` talks to the App Store through RevenueCat, and purchases are tied to the Sprout account so Plus also works on the website. While `PLUS_FREE_DURING_BETA` (in `src/lib/plus.js`) is `true`, everyone gets Plus and buying is just for testing. Purchases made in TestFlight are free.

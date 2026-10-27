@@ -30,6 +30,7 @@ export const FREE_FEATURES = [
   ['🎯', 'Focus mode', 'One thing at a time, with a timer'],
   ['🧳', 'Events & trips', 'Prep and packing planned backward from the day'],
   ['📅', 'Month calendar', 'Events, holidays, birthdays and anniversaries'],
+  ['🔄', 'Calendar sync', 'Your iPhone calendar in your plan, and Sprout’s events in your calendar (iPhone app)'],
   ['🌙', 'Low-energy days', 'One tap for a lighter day'],
   ['👋', 'Welcome back', 'Away a while? A fresh start, never a pile'],
   ['☁️', 'Sync', 'Phone, iPad and computer'],

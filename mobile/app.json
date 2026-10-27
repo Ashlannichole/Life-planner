@@ -72,6 +72,13 @@
             }
           ]
         }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Sprout shows events from your calendars in your plan and plans around them, and can add your Sprout events to a \"Sprout\" calendar.",
+          "remindersPermission": false
+        }
       ]
     ]
   }

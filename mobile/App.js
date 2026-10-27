@@ -5,6 +5,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { WebView } from 'react-native-webview'
 import { connectHealth, enableNotifications, healthAvailable, notificationStatus, readHealth, scheduleReminders } from './native'
 import { buyPlus, manageSubscription, plusOfferings, purchasesAvailable, restorePlus, startPurchases } from './purchases'
+import { calendarStatus, enableCalendar, listCalendars, readCalendarEvents, writeSproutEvents } from './calendar'
 import { updateWidget } from './widgets'
 
 // The live Sprout web app. The app's own CSS handles the notch and home bar on iOS.
@@ -23,6 +24,7 @@ const NATIVE_INFO = `window.SproutNative = ${JSON.stringify({
   platform: Platform.OS,
   features: [
     'notifications',
+    'calendar',
     ...(healthAvailable() ? ['health'] : []),
     ...(Platform.OS === 'ios' ? ['widget'] : []),
     ...(purchasesAvailable() ? ['purchases'] : []),
@@ -94,6 +96,23 @@ function Sprout() {
           case 'health:refresh':
             reply({ type: 'health:data', data: await readHealth() })
             break
+          // Two-way calendar sync
+          case 'calendar:status':
+            reply({ type: 'calendar:status', granted: await calendarStatus() })
+            break
+          case 'calendar:enable':
+            reply({ type: 'calendar:status', granted: await enableCalendar() })
+            break
+          case 'calendar:list':
+            reply({ type: 'calendar:list', calendars: await listCalendars() })
+            break
+          case 'calendar:sync': {
+            // Write Sprout's events first, then read everything else back.
+            const written = msg.write ? await writeSproutEvents(msg.sproutEvents || [], msg.from, msg.to) : 0
+            const events = await readCalendarEvents(msg.calendarIds || [], msg.from, msg.to)
+            reply({ type: 'calendar:events', events, from: msg.from, to: msg.to, written })
+            break
+          }
           case 'widget:update':
             updateWidget(msg)
             break
