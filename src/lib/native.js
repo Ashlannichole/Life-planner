@@ -25,12 +25,16 @@ export function onNative(handler) {
   return () => window.removeEventListener('sprout-native', listener)
 }
 
-/** Ask the app something and wait for the answer of a given type (or null after a while). */
-export function askNative(message, answerType, timeout = 20000) {
+/**
+ * Ask the app something and wait for the answer (or null after a while). `answer` is the
+ * reply's type, or a function that picks the reply.
+ */
+export function askNative(message, answer, timeout = 20000) {
+  const matches = typeof answer === 'function' ? answer : (msg) => msg.type === answer
   return new Promise((resolve) => {
     if (!sendNative(message)) return resolve(null)
     const stop = onNative((msg) => {
-      if (msg.type !== answerType) return
+      if (!matches(msg)) return
       stop()
       clearTimeout(timer)
       resolve(msg)

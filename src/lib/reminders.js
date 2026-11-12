@@ -71,7 +71,8 @@ export function buildReminders(state, schedule, prefs = {}, days = 7) {
       })
     }
     if (p.events) {
-      for (const e of day.events || []) {
+      // The Calendar app already reminds about its own events.
+      for (const e of (day.events || []).filter((ev) => !ev.fromCalendar)) {
         if (e.allDay || !e.start || e.date !== day.key) continue
         out.push({
           id: `event-${e.id}-${day.key}`,

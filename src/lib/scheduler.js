@@ -10,6 +10,7 @@ import { addDays, addMonths, diffDays, formatDay, formatMinutes, isWeekend, rang
 import { taskHistory } from './history.js'
 import { cookingMinutesByDay } from './meals.js'
 import { workoutMinutesByDay } from './workouts.js'
+import { allEvents } from './calendar.js'
 import { PARTS, categoryById } from './model.js'
 
 export const HORIZON_DAYS = 14
@@ -57,6 +58,9 @@ export function eventsOnDay(events, key) {
 }
 
 function eventBusy(ev, key) {
+  // All-day entries in someone's calendar are mostly holidays, birthdays and reminders
+  // ("Mom visiting"): show them, but don't clear the whole day.
+  if (ev.allDay && ev.fromCalendar) return []
   if (ev.allDay) return [[0, 1440]]
   const end = ev.endDate || ev.date
   const s = key === ev.date ? timeToMinutes(ev.start || '00:00') : 0
@@ -348,7 +352,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
   const days = rangeKeys(today, lastDay).map((key, index) => ({
     key,
     index,
-    ...dayAvailability(template, state.events, key, buffer),
+    ...dayAvailability(template, allEvents(state), key, buffer),
     used: 0,
     partUsed: { morning: 0, afternoon: 0, evening: 0 },
     items: [],
@@ -410,7 +414,7 @@ export function buildSchedule(state, { today, horizon = HORIZON_DAYS }) {
     return picked
   }
 
-  const eventById = new Map(state.events.map((e) => [e.id, e]))
+  const eventById = new Map(allEvents(state).map((e) => [e.id, e]))
   const deferredNote = (occ, text) =>
     state.deferrals?.[occ.key] && occ.kind !== 'deadline' ? 'You said not today, so it waited for a day with room' : text
 

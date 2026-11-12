@@ -1,4 +1,5 @@
 import { FREE_FEATURES, PLUS_FEATURES, PLUS_FREE_DURING_BETA } from '../lib/plus.js'
+import PlusPurchase from './PlusPurchase.jsx'
 import { Sheet } from './ui.jsx'
 
 const Row = ([emoji, title, text]) => (
@@ -24,6 +25,7 @@ export default function PlusSheet({ onClose }) {
             ? 'Everything in Plus is free while Sprout is in beta. When Plus launches, you’ll always get a reminder before any charge.'
             : 'Plus makes Sprout even cozier and does even more of the deciding for you.'}
         </p>
+        <PlusPurchase />
         <p className="section-title" style={{ margin: '8px 0 0' }}>
           ✨ Plus
         </p>

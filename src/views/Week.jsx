@@ -17,6 +17,7 @@ import { addDays, formatDay, formatMinutes, formatShortDate, formatTime, weekDay
 import { categoryById } from '../lib/model.js'
 import { eventsOnDay } from '../lib/scheduler.js'
 import { useStore } from '../store.jsx'
+import { allEvents } from '../lib/calendar.js'
 
 function Chip({ item, onOpen }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: item.key, data: item })
@@ -112,7 +113,7 @@ export default function Week() {
         <div className="week-grid">
           {days.map((key) => {
             const planned = byKey.get(key)
-            const events = planned ? planned.events : eventsOnDay(state.events, key)
+            const events = planned ? planned.events : eventsOnDay(allEvents(state), key)
             const done = key === today ? state.completions.filter((c) => c.date === key) : []
             // `used` includes anything already done today.
             const fill = planned ? planned.used / Math.max(planned.freeMinutes, 1) : null

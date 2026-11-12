@@ -7,6 +7,7 @@ import PrepAdder from '../components/PrepAdder.jsx'
 import { Icon, Segmented, Sheet, useToast } from '../components/ui.jsx'
 import { diffDays, formatDay, formatShortDate, formatTime } from '../lib/dates.js'
 import { findPrepTemplate, fitDaysBefore, templateWithItems } from '../lib/prep.js'
+import { allEvents } from '../lib/calendar.js'
 import { useStore } from '../store.jsx'
 
 function when(e, today) {
@@ -71,8 +72,13 @@ function EventDetail({ event, onClose, onEdit }) {
           />
         )}
 
-        {(event.packing?.length > 0 || event.prepTemplateId) && <PackingList event={event} />}
-        {!event.packing?.length && !event.prepTemplateId && (
+        {event.fromCalendar && (
+          <p className="small muted" style={{ margin: 0 }}>
+            📅 From your calendar. Change or remove it in the Calendar app and Sprout follows.
+          </p>
+        )}
+        {!event.fromCalendar && (event.packing?.length > 0 || event.prepTemplateId) && <PackingList event={event} />}
+        {!event.fromCalendar && !event.packing?.length && !event.prepTemplateId && (
           <details>
             <summary className="small muted">Add a packing list</summary>
             <div style={{ marginTop: 8 }}>
@@ -81,26 +87,28 @@ function EventDetail({ event, onClose, onEdit }) {
           </details>
         )}
 
-        <div className="row">
-          <button className="btn block" onClick={onEdit}>
-            Edit
-          </button>
-          {confirm ? (
-            <button
-              className="btn block danger"
-              onClick={() => {
-                actions.deleteEvent(event.id)
-                onClose()
-              }}
-            >
-              Yes, remove it
+        {!event.fromCalendar && (
+          <div className="row">
+            <button className="btn block" onClick={onEdit}>
+              Edit
             </button>
-          ) : (
-            <button className="btn block danger" onClick={() => setConfirm(true)}>
-              Remove
-            </button>
-          )}
-        </div>
+            {confirm ? (
+              <button
+                className="btn block danger"
+                onClick={() => {
+                  actions.deleteEvent(event.id)
+                  onClose()
+                }}
+              >
+                Yes, remove it
+              </button>
+            ) : (
+              <button className="btn block danger" onClick={() => setConfirm(true)}>
+                Remove
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </Sheet>
   )
@@ -132,22 +140,24 @@ export default function Events() {
   const [openId, setOpenId] = useState(null)
   const [showPast, setShowPast] = useState(false)
 
-  const sorted = [...state.events].sort((a, b) => a.date.localeCompare(b.date) || (a.start || '').localeCompare(b.start || ''))
+  const events = allEvents(state)
+  const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date) || (a.start || '').localeCompare(b.start || ''))
   const upcoming = sorted.filter((e) => (e.endDate || e.date) >= today)
   const past = sorted.filter((e) => (e.endDate || e.date) < today).reverse()
-  const open = state.events.find((e) => e.id === openId)
+  const open = events.find((e) => e.id === openId)
 
   const row = (e) => {
     const prepCount = state.tasks.filter((t) => t.eventId === e.id).length
     return (
       <button key={e.id} className="task-item" onClick={() => setOpenId(e.id)}>
-        <span className="stripe" style={{ background: 'var(--event)' }} />
+        <span className="stripe" style={{ background: e.fromCalendar ? 'var(--muted)' : 'var(--event)' }} />
         <span className="body">
           <span className="title" style={{ display: 'block' }}>
             {e.title}
           </span>
           <span className="meta">
             {when(e, today)}
+            {e.fromCalendar && <span className="tag">📅 Calendar</span>}
             {prepCount > 0 && <span className="tag event">{prepCount} prep</span>}
             {e.packing?.length > 0 && <span className="tag event">packing</span>}
           </span>
@@ -162,7 +172,7 @@ export default function Events() {
         <div>
           <h1>Events</h1>
           <p className="muted small" style={{ margin: 0 }}>
-            The plan works around these automatically.
+            The plan works around these automatically{state.calendar?.events?.length ? ', including your calendar' : ''}.
           </p>
         </div>
         <button className="btn primary" onClick={() => setEditing({ new: true })}>
@@ -181,7 +191,7 @@ export default function Events() {
 
       {view === 'month' ? (
         <MonthCalendar
-          events={state.events}
+          events={events}
           specialDays={state.specialDays}
           showHolidays={state.settings.showHolidays !== false}
           onOpenSpecialDays={() => setSpecialOpen(true)}
